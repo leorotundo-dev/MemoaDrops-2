@@ -1,0 +1,23 @@
+# MemoDrops Worker (BullMQ) - production image
+FROM node:20-slim AS base
+WORKDIR /app
+ENV NODE_ENV=production
+
+FROM base AS deps
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN --mount=type=cache,target=/root/.npm     if [ -f package-lock.json ]; then npm ci --omit=dev;     elif [ -f yarn.lock ]; then corepack enable && yarn install --production;     elif [ -f pnpm-lock.yaml ]; then corepack enable && pnpm i --prod;     else npm i --omit=dev; fi
+
+FROM base AS build
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+COPY tsconfig.json ./
+COPY src ./src
+RUN npm run build
+
+FROM base AS runtime
+USER node
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY .env ./.env 2>/dev/null || true
+CMD ["node", "dist/worker.js"]

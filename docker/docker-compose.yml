@@ -1,0 +1,48 @@
+version: "3.9"
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: memodrops
+      POSTGRES_PASSWORD: memodrops
+      POSTGRES_DB: memodrops
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memodrops"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports: ["6379:6379"]
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    environment:
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3000
+      DATABASE_URL: postgres://memodrops:memodrops@postgres:5432/memodrops
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports: ["3001:3001"]
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    environment:
+      DATABASE_URL: postgres://memodrops:memodrops@postgres:5432/memodrops
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started

@@ -5,7 +5,7 @@ import { AppError } from '../errors/AppError.js';
 
 export async function authorizeDeck(req: FastifyRequest, _reply: FastifyReply): Promise<void> {
   const userId = (req as any).userId as string | undefined;
-  const deckId = (req.params as any)?.deckId || (req.body as any)?.deckId || (req.query as any)?.deckId;
+  const deckId = (req.params as any)?.id || (req.params as any)?.deckId || (req.body as any)?.deckId || (req.query as any)?.deckId;
   if (!userId || !deckId) {
     throw new AppError('Requisição inválida', 400);
   }
@@ -16,7 +16,7 @@ export async function authorizeDeck(req: FastifyRequest, _reply: FastifyReply): 
 
 export async function authorizeCard(req: FastifyRequest, _reply: FastifyReply): Promise<void> {
   const userId = (req as any).userId as string | undefined;
-  const cardId = (req.params as any)?.cardId || (req.body as any)?.cardId || (req.query as any)?.cardId;
+  const cardId = (req.params as any)?.id || (req.params as any)?.cardId || (req.body as any)?.cardId || (req.query as any)?.cardId;
   if (!userId || !cardId) {
     throw new AppError('Requisição inválida', 400);
   }

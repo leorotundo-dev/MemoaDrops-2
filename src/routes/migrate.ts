@@ -36,17 +36,25 @@ CREATE TABLE IF NOT EXISTS jobs (
 
 export async function migrateRoutes(app: FastifyInstance) {
   app.post('/migrate', async (req, reply) => {
+    const client = await pool.connect();
     try {
-      await pool.query(MIGRATION_SQL);
+      await client.query('BEGIN');
+      await client.query(MIGRATION_SQL);
+      await client.query('COMMIT');
       
       return { success: true, message: 'Migrations executed successfully!' };
     } catch (error: any) {
+      await client.query('ROLLBACK');
       console.error('Migration error:', error);
+      console.error('Error message:', error?.message);
+      console.error('Error stack:', error?.stack);
       return reply.status(500).send({ 
         success: false, 
-        error: error.message,
-        stack: error.stack 
+        error: error?.message || String(error),
+        details: error?.stack || 'No stack trace available'
       });
+    } finally {
+      client.release();
     }
   });
 }

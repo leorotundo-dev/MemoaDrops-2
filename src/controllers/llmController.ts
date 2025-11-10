@@ -25,12 +25,6 @@ export async function generateFlashcardsFromUrlController(req: FastifyRequest, r
 
 export async function generateFlashcardsFromTextController(req: FastifyRequest, reply: FastifyReply) {
   try {
-    // Verificar se Redis está conectado
-    if (redis.status !== 'ready') {
-      console.error('[LLM] Redis não está conectado. Status:', redis.status);
-      return reply.code(503).send({ error: 'Serviço de fila temporáriamente indisponível' });
-    }
-    
     const schema = z.object({
       text: z.string().min(50),
       count: z.number().int().min(5).max(50).default(10),

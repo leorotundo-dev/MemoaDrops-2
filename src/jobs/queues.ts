@@ -7,16 +7,24 @@ const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 const connection = new IORedis(redisUrl, {
   maxRetriesPerRequest: null,  // Exigido pelo BullMQ
   connectTimeout: 10000,
-  enableReadyCheck: true,
+  enableReadyCheck: false,  // Evita travamento no ready check
+  enableOfflineQueue: false,  // Evita enfileirar comandos offline
   retryStrategy(times) {
-    // Limitar tentativas de reconexão
     if (times > 10) {
       console.error('[Redis] Máximo de tentativas de reconexão atingido');
-      return null; // Para de tentar
+      return null;
     }
-    return Math.min(times * 100, 3000); // Backoff exponencial até 3s
+    return Math.min(times * 100, 3000);
   }
 });
+
+// Logs de eventos Redis para debugging
+connection.on('error', (err) => console.error('[Redis] Error:', err));
+connection.on('close', () => console.warn('[Redis] Connection closed'));
+connection.on('reconnecting', (delay) => console.log('[Redis] Reconnecting in', delay, 'ms'));
+connection.on('end', () => console.warn('[Redis] Connection ended'));
+connection.on('ready', () => console.log('[Redis] Connection ready'));
+
 export const redis = connection;
 
 export const scrapeQueue = new Queue('scrape', { connection });

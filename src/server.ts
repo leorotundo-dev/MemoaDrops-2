@@ -21,6 +21,7 @@ import { decksRoutes } from './routes/decks.js';
 import { cardsRoutes } from './routes/cards.js';
 import { studySessionsRoutes } from './routes/study-sessions.js';
 import { reviewsRoutes } from './routes/reviews.js';
+import { llmRoutes } from './routes/llm.js';
 
 const app = Fastify({ logger: true });
 
@@ -38,6 +39,7 @@ app.get('/health', async () => ({ status: 'ok' }));
 
 // ============================================
 // NEW APP ROUTES (flashcards system)
+await app.register(llmRoutes);
 // ============================================
 
 // Auth routes

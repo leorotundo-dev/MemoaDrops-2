@@ -5,6 +5,7 @@ import { vectorProcessor } from './vectorJob.js';
 
 const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 const connection = new IORedis(redisUrl, { maxRetriesPerRequest: null });
+export const redis = connection;
 
 export const scrapeQueue = new Queue('scrape', { connection });
 export const vectorQueue = new Queue('vector', { connection });

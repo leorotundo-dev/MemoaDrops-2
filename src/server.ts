@@ -35,7 +35,7 @@ app.get('/jobs/:id', async (req, reply) => {
   const job = await scrapeQueue.getJob(id);
   if (!job) return reply.code(404).send({ error: 'not_found' });
   const state = await job.getState();
-  const result = await job.getReturnValue().catch(()=>null);
+  const result = await job.returnvalue;
   return { id, state, result, progress: job.progress };
 });
 

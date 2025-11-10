@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 
 export function htmlToText(html: string): string {
-  const $ = cheerio.load(html, { decodeEntities: true, xmlMode: false });
+  const $ = cheerio.load(html, { xml: { decodeEntities: true }, xmlMode: false } as any);
   $('script, style, noscript, iframe').remove();
   const text = $('body').text();
   return normalizeWhitespace(text);

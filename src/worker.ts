@@ -3,6 +3,8 @@ import IORedis from 'ioredis';
 import { Worker, Job } from 'bullmq';
 import { scrapeQueue, vectorQueue } from './jobs/queues.js';
 import { processLLMJob, llmQueue } from './jobs/llmQueue.js';
+import { notificationsQueue, enqueueNotificationsSweep } from './jobs/notificationsQueue.js';
+import { pullDueNotifications, markDelivered } from './services/notificationsService.js';
 import { scrapeProcessor } from './jobs/scrapeJob.js';
 import { vectorProcessor } from './jobs/vectorJob.js';
 
@@ -51,6 +53,22 @@ async function main() {
       concurrency: 5 
     });
     console.log('✅ LLM worker attached');
+
+    // Notifications worker - dedicated connection
+    const notificationsWorkerConn = createWorkerConnection();
+    new Worker(notificationsQueue.name, async (job: Job) => {
+      const due = await pullDueNotifications(200);
+      for (const n of due) {
+        // Aqui você integraria push provider (FCM/APNs). Por enquanto, log.
+        console.log('[notify]', n.user_id, n.type, n.schedule_at);
+        await markDelivered(n.id);
+      }
+    }, { connection: notificationsWorkerConn, concurrency: 1 });
+    console.log('✅ Notifications worker attached');
+
+    // Enqueue recurring sweep job
+    await enqueueNotificationsSweep();
+    console.log('✅ Notifications sweep scheduled (every 15 min)');
 
     console.log('🟢 Workers active and listening for jobs.');
   } catch (e) {

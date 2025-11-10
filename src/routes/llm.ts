@@ -1,15 +1,16 @@
-import { FastifyInstance } from 'fastify';
-import { 
-  generateFlashcardsFromTextController,
-  generateFlashcardsFromUrlController,
-  improveCardController,
-  getJobStatusController
-} from '../controllers/llmController.js';
+import type { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/authenticate.js';
+import multipart from '@fastify/multipart';
+import {
+  improveCardController,
+  generateFlashcardsFromFileController,
+  generateFlashcardsFromImageController
+} from '../controllers/llmController.js';
 
-export async function llmRoutes(app: FastifyInstance) {
-  app.post('/llm/generate/text', { preHandler: [authenticate] }, generateFlashcardsFromTextController);
-  app.post('/llm/generate/url', { preHandler: [authenticate] }, generateFlashcardsFromUrlController);
+export async function llmRoutes(app: FastifyInstance){
+  await app.register(multipart, { limits: { fileSize: 25 * 1024 * 1024 } });
+
   app.post('/llm/improve/:cardId', { preHandler: [authenticate] }, improveCardController);
-  app.get('/llm/jobs/:jobId', { preHandler: [authenticate] }, getJobStatusController);
+  app.post('/llm/generate/file', { preHandler: [authenticate] }, generateFlashcardsFromFileController);
+  app.post('/llm/generate/image', { preHandler: [authenticate] }, generateFlashcardsFromImageController);
 }

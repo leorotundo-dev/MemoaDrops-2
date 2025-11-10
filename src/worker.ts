@@ -2,7 +2,7 @@ import 'dotenv/config';
 import IORedis from 'ioredis';
 import { Worker, Job } from 'bullmq';
 import { scrapeQueue, vectorQueue } from './jobs/queues.js';
-import { processLLMJob, llmQueue } from './jobs/llmQueue.js';
+import { llmQueue, llmWorker } from './jobs/llmQueue.js';
 import { notificationsQueue, enqueueNotificationsSweep } from './jobs/notificationsQueue.js';
 import { pullDueNotifications, markDelivered } from './services/notificationsService.js';
 import { scrapeProcessor } from './jobs/scrapeJob.js';
@@ -46,12 +46,7 @@ async function main() {
     });
     console.log('✅ Vector worker attached');
 
-    // LLM worker - dedicated connection
-    const llmWorkerConn = createWorkerConnection();
-    new Worker(llmQueue.name, processLLMJob, { 
-      connection: llmWorkerConn, 
-      concurrency: 5 
-    });
+    // LLM worker - já criado em llmQueue.ts (llmWorker)
     console.log('✅ LLM worker attached');
 
     // Notifications worker - dedicated connection

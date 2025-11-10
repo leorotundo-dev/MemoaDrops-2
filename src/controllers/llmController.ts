@@ -1,117 +1,95 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { addGenerateFlashcardsJob } from '../jobs/llmQueue.js';
+import { pool } from '../db/connection.js';
 import { AppError } from '../errors/AppError.js';
+import { improveFlashcard } from '../services/llm.js';
+import { addGenerateFlashcardsJob } from '../jobs/llmQueue.js';
+import { extractTextFromBuffer } from '../services/fileExtract.js';
+import OpenAI from 'openai';
 
-const GenerateFromTextSchema = z.object({
-  text: z.string().min(50),
-  count: z.number().int().min(5).max(50).default(10),
-  subject: z.string().optional(),
-  deckId: z.string().uuid().optional()
-});
-
-export async function generateFlashcardsFromTextController(req: FastifyRequest, reply: FastifyReply) {
-  try {
-    const userId = (req as any).userId as string;
-    const { text, count, subject, deckId } = GenerateFromTextSchema.parse(req.body);
-
-    const job = await addGenerateFlashcardsJob({
-      text,
-      userId,
-      deckId,
-      options: { subject, count }
-    });
-
-    return reply.code(202).send({ jobId: job.id, deckId, estimatedTime: 120 });
-  } catch (err: any) {
-    if (err.message === 'Timeout ao adicionar job') {
-      return reply.code(504).send({ error: 'Gateway Timeout: O serviço de fila demorou para responder.' });
-    }
-    const status = err instanceof AppError ? err.status : 500;
-    return reply.code(status).send({ error: err.message || 'Erro ao criar job de geração' });
-  }
-}
-
-const GenerateFromUrlSchema = z.object({
-  url: z.string().url(),
-  count: z.number().int().min(5).max(50).default(10),
-  subject: z.string().optional(),
-  deckId: z.string().uuid().optional()
-});
-
-export async function generateFlashcardsFromUrlController(req: FastifyRequest, reply: FastifyReply) {
-  try {
-    const userId = (req as any).userId as string;
-    const { url, count, subject, deckId } = GenerateFromUrlSchema.parse(req.body);
-
-    const job = await addGenerateFlashcardsJob({
-      url,
-      userId,
-      deckId,
-      options: { subject, count }
-    });
-
-    return reply.code(202).send({ jobId: job.id, deckId, estimatedTime: 120 });
-  } catch (err: any) {
-    if (err.message === 'Timeout ao adicionar job') {
-      return reply.code(504).send({ error: 'Gateway Timeout: O serviço de fila demorou para responder.' });
-    }
-    const status = err instanceof AppError ? err.status : 500;
-    return reply.code(status).send({ error: err.message || 'Erro ao criar job de geração' });
-  }
-}
-
-const ImproveCardSchema = z.object({
-  feedback: z.string().optional(),
-  targetLanguage: z.string().optional(),
-  makeSimpler: z.boolean().optional(),
-  addExamples: z.boolean().optional()
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function improveCardController(req: FastifyRequest, reply: FastifyReply) {
-  try {
-    const { cardId } = req.params as { cardId: string };
-    const userId = (req as any).userId as string;
-    const improvements = ImproveCardSchema.parse(req.body);
+  const ps = z.object({ cardId: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) return reply.code(400).send({ error: ps.error.issues });
+  const userId = (req as any).userId as string;
 
-    // TODO: Implement card improvement logic with LLM
-    // For now, return a placeholder response
-    return reply.code(501).send({ 
-      error: 'Not Implemented',
-      message: 'Card improvement feature is under development'
-    });
-  } catch (err: any) {
-    const status = err instanceof AppError ? err.status : 500;
-    return reply.code(status).send({ error: err.message || 'Erro ao melhorar card' });
-  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query(
+      'SELECT * FROM cards WHERE id=$1 AND deck_id IN (SELECT id FROM decks WHERE user_id=$2)',
+      [ps.data.cardId, userId]
+    );
+    if (!rows[0]) throw new AppError('Card não encontrado ou acesso negado', 404);
+    const card = rows[0];
+
+    const improved = await improveFlashcard(card.front, card.back);
+
+    // salva versão anterior
+    await client.query(
+      'INSERT INTO card_versions(card_id, user_id, front, back) VALUES ($1,$2,$3,$4)',
+      [ps.data.cardId, userId, card.front, card.back]
+    );
+
+    const { rows: updated } = await client.query(
+      'UPDATE cards SET front=$1, back=$2 WHERE id=$3 RETURNING *',
+      [improved.front, improved.back, ps.data.cardId]
+    );
+    await client.query('COMMIT');
+    return reply.code(200).send(updated[0]);
+  } catch (e) {
+    await client.query('ROLLBACK');
+    const status = e instanceof AppError ? e.status : 500;
+    return reply.code(status).send({ error: (e as any).message || 'Erro ao melhorar card' });
+  } finally { client.release(); }
 }
 
-export async function getJobStatusController(req: FastifyRequest, reply: FastifyReply) {
-  try {
-    const { jobId } = req.params as { jobId: string };
-    
-    // Import queue dynamically to avoid circular dependencies
-    const { llmQueue } = await import('../jobs/llmQueue.js');
-    const job = await llmQueue.getJob(jobId);
+export async function generateFlashcardsFromFileController(req: FastifyRequest, reply: FastifyReply) {
+  const data = await (req as any).file?.();
+  if (!data) return reply.code(400).send({ error: 'Arquivo é obrigatório' });
+  const buf = await data.toBuffer();
+  const text = await extractTextFromBuffer(buf, data.mimetype, data.filename);
+  if (!text || text.trim().length < 20) return reply.code(400).send({ error: 'Não foi possível extrair texto do arquivo' });
 
-    if (!job) {
-      return reply.code(404).send({ error: 'Job não encontrado' });
-    }
+  const fields = Object.fromEntries(Object.entries((data as any).fields || {}).map(([k, v]: any) => [k, Array.isArray(v) ? v[0].value : (v?.value ?? v)] ));
+  const schema = z.object({
+    deckId: z.string().uuid().optional(),
+    subject: z.string().optional(),
+    count: z.coerce.number().int().min(5).max(50).optional()
+  }).safeParse({ deckId: fields.deckId, subject: fields.subject, count: fields.count });
+  if (!schema.success) return reply.code(400).send({ error: schema.error.issues });
 
-    const state = await job.getState();
-    const progress = job.progress;
-    const returnValue = job.returnvalue;
-    const failedReason = job.failedReason;
+  const userId = (req as any).userId as string;
+  const job = await addGenerateFlashcardsJob({
+    text, userId,
+    deckId: schema.data.deckId,
+    options: { subject: schema.data.subject, count: schema.data.count || 10 }
+  });
+  return reply.code(202).send({ jobId: job.id });
+}
 
-    return reply.code(200).send({
-      id: job.id,
-      state,
-      progress,
-      returnValue,
-      failedReason
-    });
-  } catch (err: any) {
-    const status = err instanceof AppError ? err.status : 500;
-    return reply.code(status).send({ error: err.message || 'Erro ao consultar job' });
-  }
+export async function generateFlashcardsFromImageController(req: FastifyRequest, reply: FastifyReply) {
+  const data = await (req as any).file?.();
+  if (!data) return reply.code(400).send({ error: 'Imagem é obrigatória' });
+  const buf = await data.toBuffer();
+  const base64 = buf.toString('base64');
+  const mimetype = (data.mimetype || 'image/jpeg');
+
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4-vision-preview',
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'text', text: 'Extraia todo o texto desta imagem.' },
+        { type: 'image_url', image_url: { url: `data:${mimetype};base64,${base64}` } }
+      ]
+    }]
+  });
+  const text = response.choices?.[0]?.message?.content || '';
+  if (!text) return reply.code(400).send({ error: 'Não foi possível extrair texto da imagem' });
+
+  const userId = (req as any).userId as string;
+  const job = await addGenerateFlashcardsJob({ text, userId });
+  return reply.code(202).send({ jobId: job.id });
 }

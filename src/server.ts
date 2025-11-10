@@ -15,6 +15,7 @@ import { migrateRoutes } from './routes/migrate.js';
 import { SearchQuerySchema, SyncBodySchema, ContestIdParamsSchema, JobIdParamsSchema } from './schemas/concursos.js';
 
 // New app routes (users/decks/cards/study)
+import { authRoutes } from './routes/auth.js';
 import { usersRoutes } from './routes/users.js';
 import { decksRoutes } from './routes/decks.js';
 import { cardsRoutes } from './routes/cards.js';
@@ -38,6 +39,9 @@ app.get('/health', async () => ({ status: 'ok' }));
 // ============================================
 // NEW APP ROUTES (flashcards system)
 // ============================================
+
+// Auth routes
+await app.register(authRoutes);
 await app.register(usersRoutes);
 await app.register(decksRoutes);
 await app.register(cardsRoutes);

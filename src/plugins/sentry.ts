@@ -21,7 +21,7 @@ export default fp(async (app) => {
   });
 
   app.setErrorHandler((err, req, reply) => {
-    Sentry.captureException(err, { tags: { route: req.routerPath || req.url } });
-    reply.status(err.statusCode || 500).send({ error: 'internal_error' });
+    Sentry.captureException(err, { tags: { route: (req as any).routeOptions?.url || req.url } });
+    reply.status((err as any).statusCode || 500).send({ error: 'internal_error' });
   });
 });

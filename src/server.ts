@@ -40,7 +40,7 @@ import { devicesRoutes } from './routes/devices.js';
 import { importMultipartRoutes } from './routes/import-multipart.js';
 import { notificationPrefsRoutes } from './routes/notification-prefs.js';
 
-const app = Fastify({ logger: true });
+const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
 await app.register(sentry);
 await app.register(security);
@@ -138,6 +138,13 @@ await jobsStreamRoutes(app);
 await adminRoutes(app);
 // Migration endpoint (temporary)
 await migrateRoutes(app);
+
+// Garante que tudo foi carregado antes de expor o Swagger
+await app.ready();
+// Se o decorator swagger existir (registrado por docsRoutes), constrói o JSON
+if (typeof (app as any).swagger === 'function') {
+  (app as any).swagger();
+}
 
 const port = Number(process.env.PORT || 3001);
 app.listen({ port, host: '0.0.0.0' }).then(() => {

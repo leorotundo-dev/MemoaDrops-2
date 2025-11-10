@@ -8,6 +8,7 @@ import { semanticSearch } from './services/vectorSearch.js';
 import { makeRateLimit } from './plugins/rateLimit.js';
 import { adminRoutes } from './routes/admin.js';
 import { jobsStreamRoutes } from './routes/jobsStream.js';
+import { migrateRoutes } from './routes/migrate.js';
 import { SearchQuerySchema, SyncBodySchema, ContestIdParamsSchema, JobIdParamsSchema } from './schemas/concursos.js';
 
 const app = Fastify({ logger: true });
@@ -65,6 +66,8 @@ app.get('/concursos/:contestId/search', { preHandler: [rateLimit] }, async (req,
 await jobsStreamRoutes(app);
 // Admin endpoints
 await adminRoutes(app);
+// Migration endpoint (temporary)
+await migrateRoutes(app);
 
 // Error handler padronizado
 app.setErrorHandler((err, req, reply) => {

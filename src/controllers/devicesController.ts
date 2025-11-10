@@ -1,14 +1,32 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../db/connection.js';
+import { AppError } from '../errors/AppError.js';
+
+const Body = z.object({
+  token: z.string().min(10),
+  platform: z.enum(['ios','android','web']),
+  deviceModel: z.string().optional(),
+  appVersion: z.string().optional(),
+});
 
 export async function registerDeviceController(req: FastifyRequest, reply: FastifyReply){
+  const parsed = Body.safeParse(req.body);
+  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
   const userId = (req as any).userId as string;
-  const body = z.object({ token: z.string().min(8), platform: z.enum(['ios','android','web']).default('web') }).safeParse(req.body);
-  if (!body.success) return reply.code(400).send({ error: body.error.issues });
-  await pool.query(`INSERT INTO user_devices(user_id, token, platform)
-                    VALUES ($1,$2,$3)
-                    ON CONFLICT (token) DO UPDATE SET user_id=EXCLUDED.user_id, platform=EXCLUDED.platform, updated_at=now()`,
-                    [userId, body.data.token, body.data.platform]);
-  return { ok: true };
+  if (!userId) throw new AppError('unauthorized', 401);
+
+  const { token, platform, deviceModel, appVersion } = parsed.data;
+  const q = `
+    INSERT INTO user_devices (user_id, token, platform, device_model, app_version)
+    VALUES ($1,$2,$3,$4,$5)
+    ON CONFLICT (user_id, token) DO UPDATE
+      SET platform=EXCLUDED.platform,
+          device_model=COALESCE(EXCLUDED.device_model, user_devices.device_model),
+          app_version=COALESCE(EXCLUDED.app_version, user_devices.app_version),
+          last_seen=now()
+    RETURNING id, user_id, token, platform, device_model, app_version, last_seen
+  `;
+  const { rows } = await pool.query(q, [userId, token, platform, deviceModel || null, appVersion || null]);
+  return reply.code(200).send(rows[0]);
 }

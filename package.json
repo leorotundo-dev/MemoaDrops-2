@@ -23,7 +23,11 @@
     "pg": "^8.11.5",
     "pgvector": "^0.1.8",
     "openai": "^4.52.1",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "cheerio": "^1.0.0-rc.12",
+    "pdf-parse": "^1.1.1",
+    "playwright": "^1.47.2",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

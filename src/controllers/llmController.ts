@@ -27,7 +27,7 @@ export async function generateFlashcardsFromTextController(req: FastifyRequest, 
     if (err.message === 'Timeout ao adicionar job') {
       return reply.code(504).send({ error: 'Gateway Timeout: O serviço de fila demorou para responder.' });
     }
-    const status = err instanceof AppError ? err.statusCode : 500;
+    const status = err instanceof AppError ? err.status : 500;
     return reply.code(status).send({ error: err.message || 'Erro ao criar job de geração' });
   }
 }

@@ -1,44 +1,78 @@
+
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { createCard, getCard, listCardsByDeck, getCardsDue, deleteCard } from '../services/cardsService.js';
+import {
+  createCard,
+  getCardById,
+  getCardsByDeck,
+  deleteCard,
+  getCardsDue,
+} from '../services/cardsService.js';
 
-export async function createCardController(req: FastifyRequest, reply: FastifyReply) {
-  const schema = z.object({ deckId: z.string().uuid(), front: z.string().min(1), back: z.string().min(1) });
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  const c = await createCard(parsed.data.deckId, parsed.data.front, parsed.data.back);
-  return reply.code(201).send(c);
+export async function createCardController(
+  req: FastifyRequest,
+  reply: FastifyReply
+) {
+  const body = z
+    .object({
+      deckId: z.string().uuid(),
+      front: z.string(),
+      back: z.string(),
+    })
+    .safeParse(req.body);
+
+  if (!body.success) {
+    return reply.code(400).send({ error: body.error.issues });
+  }
+
+  const card = await createCard(body.data.deckId, body.data.front, body.data.back);
+  return card;
 }
 
-export async function getCardController(req: FastifyRequest, reply: FastifyReply) {
-  const schema = z.object({ id: z.string().uuid() });
-  const parsed = schema.safeParse(req.params);
-  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  const c = await getCard(parsed.data.id);
-  if (!c) return reply.code(404).send({ error: 'not_found' });
-  return c;
+export async function getCardByIdController(
+  req: FastifyRequest,
+  reply: FastifyReply
+) {
+  const ps = z.object({ id: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) {
+    return reply.code(400).send({ error: ps.error.issues });
+  }
+  const card = await getCardById(ps.data.id);
+  return card;
 }
 
-export async function listCardsByDeckController(req: FastifyRequest, reply: FastifyReply) {
-  const schema = z.object({ deckId: z.string().uuid() });
-  const parsed = schema.safeParse(req.params);
-  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  const list = await listCardsByDeck(parsed.data.deckId);
-  return list;
-}
-
-export async function getCardsDueController(req: FastifyRequest, reply: FastifyReply) {
-  const schema = z.object({ deckId: z.string().uuid() });
-  const parsed = schema.safeParse(req.params);
-  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  const cards = await getCardsDue(parsed.data.deckId);
+export async function getCardsByDeckController(
+  req: FastifyRequest,
+  reply: FastifyReply
+) {
+  const ps = z.object({ deckId: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) {
+    return reply.code(400).send({ error: ps.error.issues });
+  }
+  const cards = await getCardsByDeck(ps.data.deckId);
   return cards;
 }
 
-export async function deleteCardController(req: FastifyRequest, reply: FastifyReply) {
-  const schema = z.object({ id: z.string().uuid() });
-  const parsed = schema.safeParse(req.params);
-  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  await deleteCard(parsed.data.id);
-  return reply.code(204).send();
+export async function deleteCardController(
+  req: FastifyRequest,
+  reply: FastifyReply
+) {
+  const ps = z.object({ id: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) {
+    return reply.code(400).send({ error: ps.error.issues });
+  }
+  await deleteCard(ps.data.id);
+  return { ok: true };
+}
+
+export async function getCardsDueController(
+  req: FastifyRequest,
+  reply: FastifyReply
+) {
+  const ps = z.object({ deckId: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) {
+    return reply.code(400).send({ error: ps.error.issues });
+  }
+  const cards = await getCardsDue(ps.data.deckId);
+  return cards;
 }

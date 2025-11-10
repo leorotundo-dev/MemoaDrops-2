@@ -1,5 +1,5 @@
 import { pool } from '../db/connection.js';
-import { scrapeContestMock } from '../services/scraper.js';
+import { scrapeContest } from '../services/scraper.js';
 import { addVector } from './queues.js';
 
 export async function scrapeProcessor(data: { douUrl: string }) {
@@ -16,7 +16,7 @@ export async function scrapeProcessor(data: { douUrl: string }) {
       contestId = ins.rows[0].id;
     }
 
-    const result = await scrapeContestMock(douUrl);
+    const result = await scrapeContest(douUrl);
     let contents = 0;
     for (const m of result.materias) {
       const matIns = await client.query('INSERT INTO materias (contest_id, nome) VALUES ($1,$2) RETURNING id', [contestId, m.nome]);

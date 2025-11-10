@@ -23,30 +23,30 @@ export async function generateFlashcardsFromUrlController(req: FastifyRequest, r
 }
 
 export async function generateFlashcardsFromTextController(req: FastifyRequest, reply: FastifyReply) {
-  console.log('[LLM] Iniciando generateFlashcardsFromTextController');
-  const schema = z.object({
-    text: z.string().min(50),
-    count: z.number().int().min(5).max(50).default(10),
-    subject: z.string().optional(),
-    deckId: z.string().uuid().optional()
-  });
-  const userId = (req as any).userId as string;
-  console.log('[LLM] userId:', userId);
-  
-  const { text, count, subject, deckId } = schema.parse(req.body);
-  console.log('[LLM] Dados parseados:', { textLength: text.length, count, subject, deckId });
-  
-  // Processar de forma assíncrona via fila (não bloquear API)
-  console.log('[LLM] Adicionando job à fila...');
-  const job = await addGenerateFlashcardsJob({
-    text,
-    userId,
-    deckId,
-    options: { subject, count }
-  });
-  console.log('[LLM] Job criado:', job.id);
-  
-  return reply.code(202).send({ jobId: job.id, deckId, estimatedTime: 60 });
+  try {
+    const schema = z.object({
+      text: z.string().min(50),
+      count: z.number().int().min(5).max(50).default(10),
+      subject: z.string().optional(),
+      deckId: z.string().uuid().optional()
+    });
+    const userId = (req as any).userId as string;
+    
+    const { text, count, subject, deckId } = schema.parse(req.body);
+    
+    // Processar de forma assíncrona via fila (não bloquear API)
+    const job = await addGenerateFlashcardsJob({
+      text,
+      userId,
+      deckId,
+      options: { subject, count }
+    });
+    
+    return reply.code(202).send({ jobId: job.id, deckId, estimatedTime: 60 });
+  } catch (error: any) {
+    console.error('[LLM] Erro:', error);
+    return reply.code(500).send({ error: 'Erro ao criar job de geração', details: error.message });
+  }
 }
 
 export async function improveFlashcardController(req: FastifyRequest, reply: FastifyReply) {

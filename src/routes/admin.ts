@@ -22,6 +22,27 @@ export async function adminRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // Executar migration 003 manualmente
+  app.post('/admin/migrate003', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const file = resolve(process.cwd(), 'src/db/migrations/003_add_password.sql');
+    const sql = readFileSync(file, 'utf-8');
+    
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(sql);
+      await client.query('COMMIT');
+      return { success: true, message: 'Migration 003 executed' };
+    } catch (err: any) {
+      await client.query('ROLLBACK');
+      return { success: false, error: err.message, code: err.code, detail: err.detail };
+    } finally {
+      client.release();
+    }
+  });
+
   // Executar migration 002 manualmente
   app.post('/admin/migrate002', async () => {
     const { readFileSync } = await import('node:fs');

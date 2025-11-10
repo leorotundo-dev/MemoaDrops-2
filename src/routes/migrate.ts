@@ -41,9 +41,11 @@ export async function migrateRoutes(app: FastifyInstance) {
       
       return { success: true, message: 'Migrations executed successfully!' };
     } catch (error: any) {
+      console.error('Migration error:', error);
       return reply.status(500).send({ 
         success: false, 
-        error: error.message 
+        error: error.message,
+        stack: error.stack 
       });
     }
   });

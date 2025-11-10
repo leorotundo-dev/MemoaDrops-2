@@ -1,22 +1,18 @@
-import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
-import swagger from '@fastify/swagger';
-import swaggerUi from '@fastify/swagger-ui';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUI from '@fastify/swagger-ui';
 
-export const docsRoutes = fp(async function (app: FastifyInstance) {
-  // Registra o gerador OpenAPI
-  await app.register(swagger, {
+export async function docsRoutes(app: FastifyInstance) {
+  await app.register(fastifySwagger, {
     openapi: {
       info: { title: 'MemoDrops API', version: '2.0.0' }
     }
   });
-
-  // Registra a UI em /docs (e /docs/)
-  await app.register(swaggerUi, {
+  await app.register(fastifySwaggerUI, {
     routePrefix: '/docs',
-    uiConfig: { docExpansion: 'list', deepLinking: true },
-    staticCSP: true
+    uiConfig: { docExpansion: 'list', deepLinking: true }
   });
-
-  // Não chame app.ready aqui; o server.ts fará isso e chamará app.swagger()
-});
+  app.ready(err => {
+    if (!err) app.swagger();
+  });
+}

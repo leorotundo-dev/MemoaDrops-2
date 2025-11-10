@@ -2,7 +2,7 @@ import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { pool } from './db/connection.js';
-import { addScrape } from './jobs/queues.js';
+
 import { searchConcursosMock } from './services/scraper.js';
 import { semanticSearch } from './services/vectorSearch.js';
 import { makeRateLimit } from './plugins/rateLimit.js';
@@ -63,7 +63,7 @@ app.get('/concursos/search', { preHandler: [rateLimit] }, async (req, reply) => 
 app.post('/concursos/sync', { preHandler: [rateLimit] }, async (req, reply) => {
   const parsed = SyncBodySchema.safeParse(req.body);
   if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  const job = await addScrape(parsed.data.douUrl);
+  const job = await (await import('./jobs/queues.js')).scrapeQueue.add('scrape', { url: parsed.data.douUrl });
   return { jobId: job.id };
 });
 

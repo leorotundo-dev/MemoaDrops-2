@@ -1,6 +1,6 @@
 import { pool } from '../db/connection.js';
 import { scrapeContest } from '../services/scraper.js';
-import { addVector } from './queues.js';
+import { vectorQueue } from './queues.js';
 
 export async function scrapeProcessor(data: { douUrl: string }) {
   const { douUrl } = data;
@@ -24,7 +24,7 @@ export async function scrapeProcessor(data: { douUrl: string }) {
       for (const texto of m.conteudos) {
         const cIns = await client.query('INSERT INTO conteudos (materia_id, texto) VALUES ($1,$2) RETURNING id', [matId, texto]);
         contents++;
-        await addVector(cIns.rows[0].id);
+        await vectorQueue.add('vectorize', { contentId: cIns.rows[0].id });
       }
     }
 

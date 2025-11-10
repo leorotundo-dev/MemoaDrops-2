@@ -10,7 +10,9 @@ declare module 'fastify' {
 }
 
 export async function authenticate(req: FastifyRequest, _reply: FastifyReply): Promise<void> {
+  console.log('[AUTHENTICATE] Middleware executado para:', req.method, req.url);
   const auth = req.headers['authorization'];
+  console.log('[AUTHENTICATE] Authorization header:', auth ? 'presente' : 'AUSENTE');
   if (!auth || !auth.startsWith('Bearer ')) {
     throw new AppError('Token ausente', 401);
   }

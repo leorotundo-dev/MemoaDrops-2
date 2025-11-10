@@ -2,6 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { addGenerateFlashcardsJob, llmQueue } from '../jobs/llmQueue.js';
 import { generateFlashcards, improveFlashcard } from '../services/llm.js';
+import { redis } from '../jobs/queues.js';
 
 const GenerateFromUrlSchema = z.object({
   url: z.string().url(),
@@ -24,6 +25,12 @@ export async function generateFlashcardsFromUrlController(req: FastifyRequest, r
 
 export async function generateFlashcardsFromTextController(req: FastifyRequest, reply: FastifyReply) {
   try {
+    // Verificar se Redis está conectado
+    if (redis.status !== 'ready') {
+      console.error('[LLM] Redis não está conectado. Status:', redis.status);
+      return reply.code(503).send({ error: 'Serviço de fila temporáriamente indisponível' });
+    }
+    
     const schema = z.object({
       text: z.string().min(50),
       count: z.number().int().min(5).max(50).default(10),
@@ -35,12 +42,14 @@ export async function generateFlashcardsFromTextController(req: FastifyRequest, 
     const { text, count, subject, deckId } = schema.parse(req.body);
     
     // Processar de forma assíncrona via fila (não bloquear API)
+    console.log('[LLM] Adicionando job na fila...');
     const job = await addGenerateFlashcardsJob({
       text,
       userId,
       deckId,
       options: { subject, count }
     });
+    console.log('[LLM] Job adicionado:', job.id);
     
     return reply.code(202).send({ jobId: job.id, deckId, estimatedTime: 60 });
   } catch (error: any) {

@@ -4,7 +4,12 @@ import { scrapeProcessor } from './scrapeJob.js';
 import { vectorProcessor } from './vectorJob.js';
 
 const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
-const connection = new IORedis(redisUrl, { maxRetriesPerRequest: null });
+const connection = new IORedis(redisUrl, {
+  maxRetriesPerRequest: 3,
+  connectTimeout: 5000,
+  enableReadyCheck: true,
+  lazyConnect: false
+});
 export const redis = connection;
 
 export const scrapeQueue = new Queue('scrape', { connection });

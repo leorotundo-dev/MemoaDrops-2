@@ -6,5 +6,5 @@ import { authenticate } from '../middleware/authenticate.js';
 export const authRoutes: FastifyPluginAsync = async (app: FastifyInstance) => {
   app.post('/auth/register', registerController);
   app.post('/auth/login',    loginController);
-  app.get('/auth/me',        { preHandler: authenticate }, meController);
+  app.get('/auth/me',        { preHandler: [authenticate] }, meController);
 };

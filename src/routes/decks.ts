@@ -14,7 +14,7 @@ import { getCardsDueController } from '../controllers/cardsController.js';
 
 export async function decksRoutes(app: FastifyInstance) {
   // Criar deck — apenas autenticação (rota de criação)
-  app.post('/decks', { preHandler: authenticate }, createDeckController);
+  app.post('/decks', { preHandler: [authenticate] }, createDeckController);
 
   // Obter deck por ID — autenticação + ownership de deck
   app.get(

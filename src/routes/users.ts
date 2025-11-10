@@ -10,7 +10,7 @@ import {
 
 export async function usersRoutes(app: FastifyInstance) {
   // Criar usuário — requer autenticação (rota de criação)
-  app.post('/users', { preHandler: authenticate }, createUserController);
+  app.post('/users', { preHandler: [authenticate] }, createUserController);
 
   // Obter usuário por ID — autenticação + ownership (req.userId === params.id)
   app.get(

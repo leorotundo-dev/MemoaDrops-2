@@ -12,7 +12,7 @@ import {
 
 export async function cardsRoutes(app: FastifyInstance) {
   // Criar card — apenas autenticação (rota de criação)
-  app.post('/cards', { preHandler: authenticate }, createCardController);
+  app.post('/cards', { preHandler: [authenticate] }, createCardController);
 
   // Obter card por ID — autenticação + ownership de card
   app.get(

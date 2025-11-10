@@ -38,7 +38,7 @@ app.get('/jobs/:id', { preHandler: [rateLimit] }, async (req, reply) => {
   const job = await (await import('./jobs/queues.js')).scrapeQueue.getJob(id);
   if (!job) return reply.code(404).send({ error: 'not_found' });
   const state = await job.getState();
-  const result = await job.getReturnValue().catch(()=>null);
+  const result = job.returnvalue ?? null;
   return { id, state, result, progress: job.progress };
 });
 

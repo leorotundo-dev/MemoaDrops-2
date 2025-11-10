@@ -32,7 +32,7 @@ export async function jobsStreamRoutes(app: FastifyInstance) {
       const progress = job.progress;
       send('state', { state, progress });
       if (state === 'completed' || state === 'failed') {
-        const result = await job.getReturnValue().catch(()=>null);
+        const result = job.returnvalue ?? null;
         send(state, { result });
         clearInterval(timer);
         reply.raw.end();

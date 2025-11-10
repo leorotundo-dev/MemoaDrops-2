@@ -6,18 +6,47 @@ import { addScrape } from './jobs/queues.js';
 import { searchConcursosMock } from './services/scraper.js';
 import { semanticSearch } from './services/vectorSearch.js';
 import { makeRateLimit } from './plugins/rateLimit.js';
+import { errorHandlerPlugin } from './errors/errorHandler.js';
+
+// Legacy routes (concursos/scraping)
 import { adminRoutes } from './routes/admin.js';
 import { jobsStreamRoutes } from './routes/jobsStream.js';
 import { migrateRoutes } from './routes/migrate.js';
 import { SearchQuerySchema, SyncBodySchema, ContestIdParamsSchema, JobIdParamsSchema } from './schemas/concursos.js';
 
+// New app routes (users/decks/cards/study)
+import { usersRoutes } from './routes/users.js';
+import { decksRoutes } from './routes/decks.js';
+import { cardsRoutes } from './routes/cards.js';
+import { studySessionsRoutes } from './routes/study-sessions.js';
+import { reviewsRoutes } from './routes/reviews.js';
+
 const app = Fastify({ logger: true });
-await app.register(cors, { origin: (process.env.CORS_ORIGIN || '*').split(','), credentials: true });
+
+await app.register(cors, { 
+  origin: (process.env.CORS_ORIGIN || '*').split(','), 
+  credentials: true 
+});
+
+await app.register(errorHandlerPlugin);
 
 const rateLimit = makeRateLimit(app, { maxPerMinute: 120 });
 
+// Health check
 app.get('/health', async () => ({ status: 'ok' }));
 
+// ============================================
+// NEW APP ROUTES (flashcards system)
+// ============================================
+await app.register(usersRoutes);
+await app.register(decksRoutes);
+await app.register(cardsRoutes);
+await app.register(studySessionsRoutes);
+await app.register(reviewsRoutes);
+
+// ============================================
+// LEGACY ROUTES (concursos/scraping)
+// ============================================
 app.get('/concursos/search', { preHandler: [rateLimit] }, async (req, reply) => {
   const parsed = SearchQuerySchema.safeParse(req.query);
   if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
@@ -69,13 +98,7 @@ await adminRoutes(app);
 // Migration endpoint (temporary)
 await migrateRoutes(app);
 
-// Error handler padronizado
-app.setErrorHandler((err, req, reply) => {
-  req.log.error({ err }, 'unhandled');
-  reply.code(500).send({ error: 'internal_error' });
-});
-
 const port = Number(process.env.PORT || 3001);
-app.listen({ port, host: '0.0.0.0' }).then(()=>{
+app.listen({ port, host: '0.0.0.0' }).then(() => {
   console.log('[API] Listening on', port);
 });

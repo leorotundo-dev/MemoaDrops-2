@@ -9,9 +9,7 @@ export async function vectorProcessor(data: { conteudoId: number }) {
     if (!row) return { ok: false, reason: 'conteudo_not_found' };
 
     const emb = await getEmbedding(row.texto);
-    // pg driver maps JS arrays -> 'vector' via pgvector extension
     await client.query('UPDATE conteudos SET embedding = $1 WHERE id = $2', [emb, row.id]);
-
     await client.query('INSERT INTO jobs (type, status, data, result) VALUES ($1,$2,$3,$4)',
       ['vector', 'completed', { conteudoId: row.id }, { dims: emb.length }] as any);
 

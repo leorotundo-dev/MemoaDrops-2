@@ -1,9 +1,9 @@
 import { pool } from '../db/connection.js';
 import { scrapeContestMock } from '../services/scraper.js';
+import { addVector } from './queues.js';
 
 export async function scrapeProcessor(data: { douUrl: string }) {
   const { douUrl } = data;
-  // 1) Ensura concurso
   const client = await pool.connect();
   try {
     const found = await client.query('SELECT id FROM concursos WHERE dou_url = $1', [douUrl]);
@@ -16,21 +16,22 @@ export async function scrapeProcessor(data: { douUrl: string }) {
       contestId = ins.rows[0].id;
     }
 
-    // 2) Scrape (mock) → matérias e conteúdos
     const result = await scrapeContestMock(douUrl);
+    let contents = 0;
     for (const m of result.materias) {
       const matIns = await client.query('INSERT INTO materias (contest_id, nome) VALUES ($1,$2) RETURNING id', [contestId, m.nome]);
       const matId = matIns.rows[0].id;
       for (const texto of m.conteudos) {
-        await client.query('INSERT INTO conteudos (materia_id, texto) VALUES ($1,$2)', [matId, texto]);
+        const cIns = await client.query('INSERT INTO conteudos (materia_id, texto) VALUES ($1,$2) RETURNING id', [matId, texto]);
+        contents++;
+        await addVector(cIns.rows[0].id);
       }
     }
 
-    // 3) Grava job log (opcional)
     await client.query('INSERT INTO jobs (type, status, data, result) VALUES ($1,$2,$3,$4)',
-      ['scrape', 'completed', { douUrl }, { contestId }] as any);
+      ['scrape', 'completed', { douUrl }, { contestId, contents }] as any);
 
-    return { contestId };
+    return { contestId, contents };
   } finally {
     client.release();
   }

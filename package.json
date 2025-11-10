@@ -22,7 +22,8 @@
     "ioredis": "^5.4.1",
     "pg": "^8.11.5",
     "pgvector": "^0.1.8",
-    "openai": "^4.52.1"
+    "openai": "^4.52.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

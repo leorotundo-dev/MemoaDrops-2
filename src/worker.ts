@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Worker } from 'bullmq';
+import { Worker, Job } from 'bullmq';
 import { scrapeQueue, vectorQueue } from './jobs/queues.js';
 import { processLLMJob, llmQueue } from './jobs/llmQueue.js';
 import { scrapeProcessor } from './jobs/scrapeJob.js';
@@ -9,11 +9,11 @@ async function main() {
   console.log('🚀 Worker starting...');
   try {
     // Scraper worker
-    new Worker(scrapeQueue.name, scrapeProcessor, { connection: scrapeQueue.opts.connection, concurrency: 1 });
+    new Worker(scrapeQueue.name, async (job: Job) => scrapeProcessor(job.data), { connection: scrapeQueue.opts.connection, concurrency: 1 });
     console.log('✅ Scraper worker attached');
 
     // Vector worker
-    new Worker(vectorQueue.name, vectorProcessor, { connection: vectorQueue.opts.connection, concurrency: 3 });
+    new Worker(vectorQueue.name, async (job: Job) => vectorProcessor(job.data), { connection: vectorQueue.opts.connection, concurrency: 3 });
     console.log('✅ Vector worker attached');
 
     // LLM worker

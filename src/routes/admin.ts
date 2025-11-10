@@ -22,6 +22,17 @@ export async function adminRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // Listar tabelas do banco
+  app.get('/admin/tables', async () => {
+    const { rows } = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      ORDER BY table_name
+    `);
+    return { tables: rows.map(r => r.table_name) };
+  });
+
   // Estatísticas simples
   app.get('/admin/stats', async () => {
     const { rows: c1 } = await pool.query('SELECT COUNT(*)::int AS concursos FROM concursos');

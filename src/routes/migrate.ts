@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { pool } from '../db/pool.js';
+import { pool } from '../db/connection.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

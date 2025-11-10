@@ -1,18 +1,27 @@
 import { Queue, Job } from 'bullmq';
-import { redis } from './queues.js';
+import IORedis from 'ioredis';
 import { generateFlashcards } from '../services/llm.js';
 import { chunkContent, processScrapedContent } from '../services/contentProcessor.js';
 import OpenAI from 'openai';
 import { pool } from '../db/connection.js';
 
+const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+
+// Conexão dedicada para a fila LLM
+const llmConnection = new IORedis(redisUrl, {
+  maxRetriesPerRequest: null,
+  connectTimeout: 10000,
+  enableOfflineQueue: false,
+});
+
 export const llmQueue = new Queue('llm-processing', {
-  connection: redis,
+  connection: llmConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: { type: 'exponential', delay: 2000 },
     removeOnComplete: 1000,
-    removeOnFail: 500
-  }
+    removeOnFail: 500,
+  },
 });
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -23,16 +32,14 @@ async function ensureEmbedding(cardId: string, text: string) {
     const r = await openai.embeddings.create({ model: EMB_MODEL, input: text });
     const emb = r.data[0]?.embedding;
     if (emb && emb.length) {
-      // tenta salvar em tabela auxiliar card_embeddings(card_id uuid, embedding vector/JSON)
       try {
         await pool.query('INSERT INTO card_embeddings(card_id, embedding) VALUES ($1,$2) ON CONFLICT (card_id) DO UPDATE SET embedding = EXCLUDED.embedding', [cardId, JSON.stringify(emb)]);
       } catch {
-        // fallback: se cards tiver coluna embedding jsonb
         try { await pool.query('UPDATE cards SET embedding=$2 WHERE id=$1', [cardId, JSON.stringify(emb)]); } catch {}
       }
     }
   } catch (e) {
-    // ignore embedding errors
+    // ignore
   }
 }
 
@@ -41,13 +48,9 @@ export async function addGenerateFlashcardsJob(data: {
   text?: string;
   userId: string;
   deckId?: string;
-  options?: { subject?: string; count?: number; };
+  options?: { subject?: string; count?: number };
 }) {
-  // Timeout de 5 segundos para adicionar job
-  return Promise.race([
-    llmQueue.add('generate', data),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout ao adicionar job')), 5000))
-  ]) as Promise<any>;
+  return llmQueue.add('generate', data);
 }
 
 export async function processLLMJob(job: Job): Promise<{ cardsCreated: number; deckId: string }> {
@@ -58,11 +61,9 @@ export async function processLLMJob(job: Job): Promise<{ cardsCreated: number; d
   let content: string;
   
   if (text) {
-    // Texto direto fornecido
     job.updateProgress({ step: 'text', progress: 10 });
     content = text;
   } else if (url) {
-    // Scraping de URL
     job.updateProgress({ step: 'fetch', progress: 5 });
     const processed = await processScrapedContent(url);
     content = processed.content;
@@ -73,7 +74,6 @@ export async function processLLMJob(job: Job): Promise<{ cardsCreated: number; d
   job.updateProgress({ step: 'chunk', progress: 15 });
   const chunks = chunkContent(content, 3000);
 
-  // escolher/confirmar deck
   let deckIdToUse = deckId;
   if (!deckIdToUse) {
     const title = options?.subject ? `Auto • ${options.subject}` : 'Auto • Geral';

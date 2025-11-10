@@ -1,19 +1,43 @@
 import { FastifyInstance } from 'fastify';
 import { pool } from '../db/connection.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const MIGRATION_SQL = `
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS concursos (
+  id SERIAL PRIMARY KEY,
+  nome TEXT NOT NULL,
+  dou_url TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS materias (
+  id SERIAL PRIMARY KEY,
+  contest_id INT NOT NULL REFERENCES concursos(id) ON DELETE CASCADE,
+  nome TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS conteudos (
+  id SERIAL PRIMARY KEY,
+  materia_id INT NOT NULL REFERENCES materias(id) ON DELETE CASCADE,
+  texto TEXT NOT NULL,
+  embedding VECTOR(1536)
+);
+
+CREATE TABLE IF NOT EXISTS jobs (
+  id SERIAL PRIMARY KEY,
+  type TEXT NOT NULL,
+  status TEXT NOT NULL,
+  data JSONB,
+  result JSONB,
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+`;
 
 export async function migrateRoutes(app: FastifyInstance) {
   app.post('/migrate', async (req, reply) => {
     try {
-      const sqlPath = path.join(__dirname, '../db/migrations/001_initial_schema.sql');
-      const sql = fs.readFileSync(sqlPath, 'utf-8');
-      
-      await pool.query(sql);
+      await pool.query(MIGRATION_SQL);
       
       return { success: true, message: 'Migrations executed successfully!' };
     } catch (error: any) {

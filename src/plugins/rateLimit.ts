@@ -10,7 +10,7 @@ type RateOpts = {
 export function makeRateLimit(app: FastifyInstance, opts: RateOpts = {}) {
   const redis = new IORedis(opts.redisUrl || process.env.REDIS_URL || 'redis://127.0.0.1:6379');
   const max = opts.maxPerMinute ?? 60;
-  const keyFn = opts.keyFn ?? ((req) => `${(req as any).routeOptions?.url || req.url}:${(req.headers['x-forwarded-for'] || req.ip)}`);
+  const keyFn = opts.keyFn ?? ((req) => `${(req as any).routerPath || req.url}:${(req.headers['x-forwarded-for'] || req.ip)}`);
 
   return async function rateLimit(req: FastifyRequest, reply: FastifyReply) {
     const key = `ratelimit:${keyFn(req)}`;

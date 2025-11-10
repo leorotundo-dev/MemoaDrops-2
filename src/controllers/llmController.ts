@@ -31,11 +31,16 @@ export async function generateFlashcardsFromTextController(req: FastifyRequest, 
   });
   const userId = (req as any).userId as string;
   const { text, count, subject, deckId } = schema.parse(req.body);
-  const cards = await generateFlashcards(text, { subject, count });
-
-  // opcional: grava direto sem fila
-  // ... aqui poderíamos inserir no deck, mas mantemos somente retorno
-  return reply.send({ cards, deckId });
+  
+  // Processar de forma assíncrona via fila (não bloquear API)
+  const job = await addGenerateFlashcardsJob({
+    text,
+    userId,
+    deckId,
+    options: { subject, count }
+  });
+  
+  return reply.code(202).send({ jobId: job.id, deckId, estimatedTime: 60 });
 }
 
 export async function improveFlashcardController(req: FastifyRequest, reply: FastifyReply) {

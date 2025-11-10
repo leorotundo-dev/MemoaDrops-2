@@ -37,7 +37,8 @@ async function ensureEmbedding(cardId: string, text: string) {
 }
 
 export async function addGenerateFlashcardsJob(data: {
-  url: string;
+  url?: string;
+  text?: string;
   userId: string;
   deckId?: string;
   options?: { subject?: string; count?: number; };
@@ -46,15 +47,27 @@ export async function addGenerateFlashcardsJob(data: {
 }
 
 export async function processLLMJob(job: Job): Promise<{ cardsCreated: number; deckId: string }> {
-  const { url, userId, deckId, options } = job.data as {
-    url: string; userId: string; deckId?: string; options?: { subject?: string; count?: number; };
+  const { url, text, userId, deckId, options } = job.data as {
+    url?: string; text?: string; userId: string; deckId?: string; options?: { subject?: string; count?: number; };
   };
 
-  job.updateProgress({ step: 'fetch', progress: 5 });
-  const processed = await processScrapedContent(url);
+  let content: string;
+  
+  if (text) {
+    // Texto direto fornecido
+    job.updateProgress({ step: 'text', progress: 10 });
+    content = text;
+  } else if (url) {
+    // Scraping de URL
+    job.updateProgress({ step: 'fetch', progress: 5 });
+    const processed = await processScrapedContent(url);
+    content = processed.content;
+  } else {
+    throw new Error('url ou text devem ser fornecidos');
+  }
 
-  job.updateProgress({ step: 'chunk', progress: 10 });
-  const chunks = chunkContent(processed.content, 3000);
+  job.updateProgress({ step: 'chunk', progress: 15 });
+  const chunks = chunkContent(content, 3000);
 
   // escolher/confirmar deck
   let deckIdToUse = deckId;

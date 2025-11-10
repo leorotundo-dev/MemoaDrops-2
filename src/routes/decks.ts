@@ -10,7 +10,7 @@ import {
   deleteDeckController,
   deckSemanticSearchController,
 } from '../controllers/decksController.js';
-import { getCardsDueController } from '../controllers/cardsController.js';
+
 
 export async function decksRoutes(app: FastifyInstance) {
   // Criar deck — apenas autenticação (rota de criação)
@@ -54,10 +54,5 @@ export async function decksRoutes(app: FastifyInstance) {
     deckSemanticSearchController,
   );
 
-  // Cards vencidos por deck — autenticação + ownership de deck
-  app.get(
-    '/decks/:deckId/cards/due',
-    { preHandler: [authenticate, authorizeDeck] },
-    getCardsDueController,
-  );
+
 }

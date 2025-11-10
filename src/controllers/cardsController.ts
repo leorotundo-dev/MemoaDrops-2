@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { createCard, getCard, listCardsByDeck, deleteCard } from '../services/cardsService.js';
+import { createCard, getCard, listCardsByDeck, getCardsDue, deleteCard } from '../services/cardsService.js';
 
 export async function createCardController(req: FastifyRequest, reply: FastifyReply) {
   const schema = z.object({ deckId: z.string().uuid(), front: z.string().min(1), back: z.string().min(1) });
@@ -25,6 +25,14 @@ export async function listCardsByDeckController(req: FastifyRequest, reply: Fast
   if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
   const list = await listCardsByDeck(parsed.data.deckId);
   return list;
+}
+
+export async function getCardsDueController(req: FastifyRequest, reply: FastifyReply) {
+  const schema = z.object({ deckId: z.string().uuid() });
+  const parsed = schema.safeParse(req.params);
+  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
+  const cards = await getCardsDue(parsed.data.deckId);
+  return cards;
 }
 
 export async function deleteCardController(req: FastifyRequest, reply: FastifyReply) {

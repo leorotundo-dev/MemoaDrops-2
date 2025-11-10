@@ -22,6 +22,10 @@ import { cardsRoutes } from './routes/cards.js';
 import { studySessionsRoutes } from './routes/study-sessions.js';
 import { reviewsRoutes } from './routes/reviews.js';
 import { llmRoutes } from './routes/llm.js';
+import { notificationsRoutes } from './routes/notifications.js';
+import { healthRoutes } from './routes/health.js';
+import { docsRoutes } from './routes/docs.js';
+import { queuesRoutes } from './routes/queues.js';
 
 const app = Fastify({ logger: true });
 
@@ -34,8 +38,10 @@ await app.register(errorHandlerPlugin);
 
 const rateLimit = makeRateLimit(app, { maxPerMinute: 120 });
 
-// Health check
-app.get('/health', async () => ({ status: 'ok' }));
+// Health check and monitoring
+await app.register(healthRoutes);
+await app.register(docsRoutes);
+await app.register(queuesRoutes);
 
 // ============================================
 // NEW APP ROUTES (flashcards system)
@@ -49,6 +55,7 @@ await app.register(decksRoutes);
 await app.register(cardsRoutes);
 await app.register(studySessionsRoutes);
 await app.register(reviewsRoutes);
+await app.register(notificationsRoutes);
 
 // ============================================
 // LEGACY ROUTES (concursos/scraping)

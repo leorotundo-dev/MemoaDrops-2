@@ -1,45 +1,63 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { createDeck, getDeck, listDecksByUser, deleteDeck } from '../services/decksService.js';
-import { searchInDeck } from '../services/vectorSearchService.js';
+import { AppError } from '../errors/AppError.js';
+import { createDeck, getDeckById, getDecksByUser, deleteDeck, updateDeck, listPublicDecks, cloneDeck } from '../services/decksService.js';
 
 export async function createDeckController(req: FastifyRequest, reply: FastifyReply) {
-  const schema = z.object({ userId: z.string().uuid(), title: z.string().min(1), description: z.string().optional() });
-  const parsed = schema.safeParse(req.body);
-  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  const d = await createDeck(parsed.data.userId, parsed.data.title, parsed.data.description);
-  return reply.code(201).send(d);
+  const body = z.object({ title: z.string().min(1), description: z.string().optional() }).safeParse(req.body);
+  if (!body.success) return reply.code(400).send({ error: body.error.issues });
+  const userId = (req as any).userId as string;
+  const deck = await createDeck(userId, body.data.title, body.data.description);
+  return deck;
 }
 
-export async function getDeckController(req: FastifyRequest, reply: FastifyReply) {
-  const schema = z.object({ id: z.string().uuid() });
-  const parsed = schema.safeParse(req.params);
-  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  const d = await getDeck(parsed.data.id);
-  if (!d) return reply.code(404).send({ error: 'not_found' });
-  return d;
+export async function getDeckByIdController(req: FastifyRequest, reply: FastifyReply) {
+  const ps = z.object({ id: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) return reply.code(400).send({ error: ps.error.issues });
+  const deck = await getDeckById(ps.data.id);
+  if (!deck) throw new AppError('Deck não encontrado', 404);
+  return deck;
 }
 
-export async function listDecksByUserController(req: FastifyRequest, reply: FastifyReply) {
-  const schema = z.object({ userId: z.string().uuid() });
-  const parsed = schema.safeParse(req.params);
-  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  const list = await listDecksByUser(parsed.data.userId);
-  return list;
+export async function getDecksByUserController(req: FastifyRequest, reply: FastifyReply) {
+  const ps = z.object({ userId: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) return reply.code(400).send({ error: ps.error.issues });
+  const authUser = (req as any).userId as string;
+  if (authUser !== ps.data.userId) throw new AppError('Acesso negado', 403);
+  const decks = await getDecksByUser(ps.data.userId);
+  return decks;
+}
+
+export async function updateDeckController(req: FastifyRequest, reply: FastifyReply) {
+  const ps = z.object({ id: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) return reply.code(400).send({ error: ps.error.issues });
+  const body = z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    is_public: z.boolean().optional()
+  }).safeParse(req.body);
+  if (!body.success) return reply.code(400).send({ error: body.error.issues });
+  const deck = await updateDeck(ps.data.id, body.data);
+  return deck;
 }
 
 export async function deleteDeckController(req: FastifyRequest, reply: FastifyReply) {
-  const schema = z.object({ id: z.string().uuid() });
-  const parsed = schema.safeParse(req.params);
-  if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  await deleteDeck(parsed.data.id);
-  return reply.code(204).send();
+  const ps = z.object({ id: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) return reply.code(400).send({ error: ps.error.issues });
+  await deleteDeck(ps.data.id);
+  return { ok: true };
 }
 
-export async function deckSemanticSearchController(req: FastifyRequest, reply: FastifyReply) {
-  const ps = z.object({ deckId: z.string().uuid() }).safeParse(req.params);
-  const qs = z.object({ q: z.string().min(1).max(200) }).safeParse(req.query);
-  if (!ps.success || !qs.success) return reply.code(400).send({ error: [ps.error?.issues, qs.error?.issues] });
-  const rows = await searchInDeck(ps.data.deckId, qs.data.q);
-  return rows;
+export async function listPublicDecksController(req: FastifyRequest, reply: FastifyReply) {
+  const qs = z.object({ limit: z.coerce.number().int().min(1).max(200).default(100) }).safeParse((req as any).query);
+  const decks = await listPublicDecks(qs.success ? qs.data.limit : 100);
+  return decks;
+}
+
+export async function cloneDeckController(req: FastifyRequest, reply: FastifyReply) {
+  const ps = z.object({ id: z.string().uuid() }).safeParse(req.params);
+  if (!ps.success) return reply.code(400).send({ error: ps.error.issues });
+  const userId = (req as any).userId as string;
+  const out = await cloneDeck(ps.data.id, userId);
+  return out;
 }

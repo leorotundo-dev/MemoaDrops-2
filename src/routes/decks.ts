@@ -1,58 +1,27 @@
-
 import type { FastifyInstance } from 'fastify';
 import { authenticate } from '../middleware/authenticate.js';
 import { authorizeDeck } from '../middleware/authorize.js';
-import { AppError } from '../errors/AppError.js';
 import {
   createDeckController,
-  getDeckController,
-  listDecksByUserController,
+  getDeckByIdController,
+  getDecksByUserController,
   deleteDeckController,
-  deckSemanticSearchController,
+  updateDeckController,
+  listPublicDecksController,
+  cloneDeckController
 } from '../controllers/decksController.js';
 
-
 export async function decksRoutes(app: FastifyInstance) {
-  // Criar deck — apenas autenticação (rota de criação)
   app.post('/decks', { preHandler: [authenticate] }, createDeckController);
+  app.get('/decks/:id', { preHandler: [authenticate, authorizeDeck] }, getDeckByIdController);
 
-  // Obter deck por ID — autenticação + ownership de deck
-  app.get(
-    '/decks/:id',
-    { preHandler: [authenticate, authorizeDeck] },
-    getDeckController,
-  );
+  // listar decks do próprio usuário (ownership inline)
+  app.get('/decks/user/:userId', { preHandler: [authenticate] }, getDecksByUserController);
 
-  // Listar decks do usuário — autenticação + ownership (req.userId === params.userId)
-  app.get(
-    '/decks/user/:userId',
-    {
-      preHandler: [
-        authenticate,
-        async (req) => {
-          const { userId } = req.params as any;
-          if (req.userId !== userId) {
-            throw new AppError('Acesso negado', 403);
-          }
-        },
-      ],
-    },
-    listDecksByUserController,
-  );
+  app.patch('/decks/:id', { preHandler: [authenticate, authorizeDeck] }, updateDeckController);
+  app.delete('/decks/:id', { preHandler: [authenticate, authorizeDeck] }, deleteDeckController);
 
-  // Deletar deck — autenticação + ownership de deck
-  app.delete(
-    '/decks/:id',
-    { preHandler: [authenticate, authorizeDeck] },
-    deleteDeckController,
-  );
-
-  // Buscar cards dentro do deck — autenticação + ownership de deck
-  app.get(
-    '/decks/:deckId/search',
-    { preHandler: [authenticate, authorizeDeck] },
-    deckSemanticSearchController,
-  );
-
-
+  // públicos e clonagem (apenas autenticado)
+  app.get('/decks/public', { preHandler: [authenticate] }, listPublicDecksController);
+  app.post('/decks/:id/clone', { preHandler: [authenticate] }, cloneDeckController);
 }

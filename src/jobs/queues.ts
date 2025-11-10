@@ -21,7 +21,7 @@ const connection = new IORedis(redisUrl, {
 // Logs de eventos Redis para debugging
 connection.on('error', (err) => console.error('[Redis] Error:', err));
 connection.on('close', () => console.warn('[Redis] Connection closed'));
-connection.on('reconnecting', (delay) => console.log('[Redis] Reconnecting in', delay, 'ms'));
+connection.on('reconnecting', (delay: number) => console.log('[Redis] Reconnecting in', delay, 'ms'));
 connection.on('end', () => console.warn('[Redis] Connection ended'));
 connection.on('ready', () => console.log('[Redis] Connection ready'));
 

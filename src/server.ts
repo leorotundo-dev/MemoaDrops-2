@@ -31,6 +31,10 @@ import { profileRoutes } from './routes/profile.js';
 import { statsRoutes } from './routes/stats.js';
 import { searchRoutes } from './routes/search.js';
 import { importExportRoutes } from './routes/import-export.js';
+import { oauthRoutes } from './routes/oauth.js';
+import { totpRoutes } from './routes/totp.js';
+import { devicesRoutes } from './routes/devices.js';
+import { importMultipartRoutes } from './routes/import-multipart.js';
 
 const app = Fastify({ logger: true });
 
@@ -66,6 +70,10 @@ await app.register(notificationsRoutes);
 await app.register(statsRoutes);
 await app.register(searchRoutes);
 await app.register(importExportRoutes);
+await app.register(oauthRoutes);
+await app.register(totpRoutes);
+await app.register(devicesRoutes);
+await app.register(importMultipartRoutes);
 
 // ============================================
 // LEGACY ROUTES (concursos/scraping)

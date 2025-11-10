@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "MemoDrops API v2.1",
+    "_postman_id": "memodrops-v21",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{BASE_URL}}/auth/login",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"test@memodrops.io\", \"password\": \"secret\"}"
+        }
+      }
+    },
+    {
+      "name": "OAuth - Google",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{BASE_URL}}/auth/oauth/google",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"idToken\": \"<google_id_token>\"}"
+        }
+      }
+    },
+    {
+      "name": "2FA - Setup",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT}}"
+          }
+        ],
+        "url": "{{BASE_URL}}/auth/2fa/setup"
+      }
+    },
+    {
+      "name": "Devices - Register",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{BASE_URL}}/devices/register",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"token\": \"<fcm_device_token>\", \"platform\": \"android\"}"
+        }
+      }
+    },
+    {
+      "name": "Import - CSV",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT}}"
+          }
+        ],
+        "url": "{{BASE_URL}}/import/upload/csv"
+      }
+    },
+    {
+      "name": "Search - Cards",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT}}"
+          }
+        ],
+        "url": "{{BASE_URL}}/search/cards?q=constitucional"
+      }
+    },
+    {
+      "name": "Stats - Deck",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT}}"
+          }
+        ],
+        "url": "{{BASE_URL}}/stats/decks/{{DECK_ID}}"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:3001"
+    },
+    {
+      "key": "JWT",
+      "value": ""
+    },
+    {
+      "key": "DECK_ID",
+      "value": ""
+    }
+  ]
+}

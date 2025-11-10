@@ -10,7 +10,7 @@ export async function createNotificationController(req: FastifyRequest, reply: F
     payload: z.any().optional()
   }).safeParse(req.body);
   if (!body.success) return reply.code(400).send({ error: body.error.issues });
-  const n = await createNotification({ userId, type: body.data.type, scheduleAt: body.data.scheduleAt, payload: body.data.payload || null });
+  const n = await createNotification({ userId, type: body.data.type, scheduleAt: body.data.scheduleAt, payload: body.data.payload ?? null });
   return n;
 }
 

@@ -1,0 +1,162 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MemoDrops API",
+    "version": "2.1.0"
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Login",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Register",
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Refresh Token",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/oauth/google": {
+      "post": {
+        "summary": "OAuth Google",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/oauth/apple": {
+      "post": {
+        "summary": "OAuth Apple",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/2fa/setup": {
+      "post": {
+        "summary": "TOTP Setup",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/2fa/enable": {
+      "post": {
+        "summary": "TOTP Enable",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/2fa/login": {
+      "post": {
+        "summary": "TOTP Login",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/devices/register": {
+      "post": {
+        "summary": "Registrar device",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/decks/public": {
+      "get": {
+        "summary": "Listar decks públicos",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/decks/{id}/clone": {
+      "post": {
+        "summary": "Clonar deck",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "summary": "Listar notificações"
+      },
+      "post": {
+        "summary": "Criar notificação"
+      }
+    },
+    "/import/upload/csv": {
+      "post": {
+        "summary": "Importar CSV"
+      }
+    },
+    "/import/upload/anki": {
+      "post": {
+        "summary": "Importar Anki"
+      }
+    },
+    "/search/cards": {
+      "get": {
+        "summary": "Busca textual"
+      }
+    },
+    "/stats/decks/{deckId}": {
+      "get": {
+        "summary": "Stats por deck"
+      }
+    },
+    "/stats/heatmap/{userId}": {
+      "get": {
+        "summary": "Heatmap do usuário"
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health"
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus"
+      }
+    }
+  }
+}

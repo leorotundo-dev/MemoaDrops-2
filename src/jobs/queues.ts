@@ -17,7 +17,7 @@ const defaultJobOpts: JobsOptions = {
   backoff: { type: 'exponential', delay: 2000 }
 };
 
-export function makeWorker() {
+export function createWorkers() {
   new Worker('scrape', async (job) => {
     try {
       return await scrapeProcessor(job.data);
@@ -43,7 +43,7 @@ export function makeWorker() {
     console.error('[vector failed]', jobId, failedReason);
   });
 
-  console.log('[Worker] Workers started (scrape, vector) with retries/backoff');
+  console.log('[Worker] Workers up and ready to process jobs');
 }
 
 export function addScrape(douUrl: string) {

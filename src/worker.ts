@@ -1,6 +1,15 @@
 import 'dotenv/config';
-import { makeWorker } from './jobs/queues.js';
+import { createWorkers } from './jobs/queues.js';
 
-makeWorker();
-console.log('[Worker] running…');
-process.stdin.resume();
+async function main() {
+  console.log('🚀 Worker starting...');
+  try {
+    await createWorkers();
+    console.log('🟢 Workers active and listening for jobs.');
+  } catch (e) {
+    console.error('❌ Worker init error:', e);
+    process.exit(1);
+  }
+}
+
+main();

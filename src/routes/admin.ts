@@ -22,6 +22,27 @@ export async function adminRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // Executar migration 002 manualmente
+  app.post('/admin/migrate002', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const file = resolve(process.cwd(), 'src/db/migrations/002_app_schema.sql');
+    const sql = readFileSync(file, 'utf-8');
+    
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(sql);
+      await client.query('COMMIT');
+      return { success: true, message: 'Migration 002 executed' };
+    } catch (err: any) {
+      await client.query('ROLLBACK');
+      return { success: false, error: err.message, code: err.code, detail: err.detail };
+    } finally {
+      client.release();
+    }
+  });
+
   // Listar tabelas do banco
   app.get('/admin/tables', async () => {
     const { rows } = await pool.query(`

@@ -26,6 +26,11 @@ import { notificationsRoutes } from './routes/notifications.js';
 import { healthRoutes } from './routes/health.js';
 import { docsRoutes } from './routes/docs.js';
 import { queuesRoutes } from './routes/queues.js';
+import { authExtraRoutes } from './routes/auth-extra.js';
+import { profileRoutes } from './routes/profile.js';
+import { statsRoutes } from './routes/stats.js';
+import { searchRoutes } from './routes/search.js';
+import { importExportRoutes } from './routes/import-export.js';
 
 const app = Fastify({ logger: true });
 
@@ -50,12 +55,17 @@ await app.register(llmRoutes);
 
 // Auth routes
 await app.register(authRoutes);
+await app.register(authExtraRoutes);
 await app.register(usersRoutes);
+await app.register(profileRoutes);
 await app.register(decksRoutes);
 await app.register(cardsRoutes);
 await app.register(studySessionsRoutes);
 await app.register(reviewsRoutes);
 await app.register(notificationsRoutes);
+await app.register(statsRoutes);
+await app.register(searchRoutes);
+await app.register(importExportRoutes);
 
 // ============================================
 // LEGACY ROUTES (concursos/scraping)

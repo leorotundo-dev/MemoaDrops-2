@@ -50,7 +50,9 @@ export async function addGenerateFlashcardsJob(data: {
   deckId?: string;
   options?: { subject?: string; count?: number };
 }) {
-  return llmQueue.add('generate', data);
+    const addPromise = llmQueue.add("generate", data);
+  const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout ao adicionar job")), 8000));
+  return Promise.race([addPromise, timeout]) as Promise<any>;
 }
 
 export async function processLLMJob(job: Job): Promise<{ cardsCreated: number; deckId: string }> {

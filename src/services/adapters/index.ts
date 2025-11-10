@@ -26,39 +26,39 @@ import { makeConsulplanAdapter } from './bancas/consulplan.js';
 import { makeIbadeAdapter } from './bancas/ibade.js';
 
 import { makeSeiAdapter } from './federal/sei.js';
-import { makeCompras_PortalAdapter } from './federal/compras-portal.js';
+import { makeComprasPortalAdapter } from './federal/compras-portal.js';
 import { makeLexmlAdapter } from './federal/lexml.js';
 
-import { makeDom_FecamAdapter } from './municipais/dom-fecam.js';
-import { makeDom_Am_MunicipiosAdapter } from './municipais/dom-am-municipios.js';
+import { makeDomFecamAdapter } from './municipais/dom-fecam.js';
+import { makeDomAmMunicipiosAdapter } from './municipais/dom-am-municipios.js';
 import { makeIomAdapter } from './municipais/iom.js';
-import { makeDom_CidadesAdapter } from './municipais/dom-cidades.js';
+import { makeDomCidadesAdapter } from './municipais/dom-cidades.js';
 
-import { makeDoe_AcAdapter } from './estaduais/doe-ac.js';
-import { makeDoe_AlAdapter } from './estaduais/doe-al.js';
-import { makeDoe_AmAdapter } from './estaduais/doe-am.js';
-import { makeDoe_ApAdapter } from './estaduais/doe-ap.js';
-import { makeDoe_BaAdapter } from './estaduais/doe-ba.js';
-import { makeDoe_CeAdapter } from './estaduais/doe-ce.js';
-import { makeDoe_DfAdapter } from './estaduais/doe-df.js';
-import { makeDoe_EsAdapter } from './estaduais/doe-es.js';
-import { makeDoe_GoAdapter } from './estaduais/doe-go.js';
-import { makeDoe_MaAdapter } from './estaduais/doe-ma.js';
-import { makeDoe_MgAdapter } from './estaduais/doe-mg.js';
-import { makeDoe_MsAdapter } from './estaduais/doe-ms.js';
-import { makeDoe_PaAdapter } from './estaduais/doe-pa.js';
-import { makeDoe_PbAdapter } from './estaduais/doe-pb.js';
-import { makeDoe_PeAdapter } from './estaduais/doe-pe.js';
-import { makeDoe_PiAdapter } from './estaduais/doe-pi.js';
-import { makeDoe_PrAdapter } from './estaduais/doe-pr.js';
-import { makeDoe_RjAdapter } from './estaduais/doe-rj.js';
-import { makeDoe_RnAdapter } from './estaduais/doe-rn.js';
-import { makeDoe_RoAdapter } from './estaduais/doe-ro.js';
-import { makeDoe_RrAdapter } from './estaduais/doe-rr.js';
-import { makeDoe_RsAdapter } from './estaduais/doe-rs.js';
-import { makeDoe_ScAdapter } from './estaduais/doe-sc.js';
-import { makeDoe_SeAdapter } from './estaduais/doe-se.js';
-import { makeDoe_ToAdapter } from './estaduais/doe-to.js';
+import { makeDoeAcAdapter } from './estaduais/doe-ac.js';
+import { makeDoeAlAdapter } from './estaduais/doe-al.js';
+import { makeDoeAmAdapter } from './estaduais/doe-am.js';
+import { makeDoeApAdapter } from './estaduais/doe-ap.js';
+import { makeDoeBaAdapter } from './estaduais/doe-ba.js';
+import { makeDoeCeAdapter } from './estaduais/doe-ce.js';
+import { makeDoeDfAdapter } from './estaduais/doe-df.js';
+import { makeDoeEsAdapter } from './estaduais/doe-es.js';
+import { makeDoeGoAdapter } from './estaduais/doe-go.js';
+import { makeDoeMaAdapter } from './estaduais/doe-ma.js';
+import { makeDoeMgAdapter } from './estaduais/doe-mg.js';
+import { makeDoeMsAdapter } from './estaduais/doe-ms.js';
+import { makeDoePaAdapter } from './estaduais/doe-pa.js';
+import { makeDoePbAdapter } from './estaduais/doe-pb.js';
+import { makeDoePeAdapter } from './estaduais/doe-pe.js';
+import { makeDoePiAdapter } from './estaduais/doe-pi.js';
+import { makeDoePrAdapter } from './estaduais/doe-pr.js';
+import { makeDoeRjAdapter } from './estaduais/doe-rj.js';
+import { makeDoeRnAdapter } from './estaduais/doe-rn.js';
+import { makeDoeRoAdapter } from './estaduais/doe-ro.js';
+import { makeDoeRrAdapter } from './estaduais/doe-rr.js';
+import { makeDoeRsAdapter } from './estaduais/doe-rs.js';
+import { makeDoeScAdapter } from './estaduais/doe-sc.js';
+import { makeDoeSeAdapter } from './estaduais/doe-se.js';
+import { makeDoeToAdapter } from './estaduais/doe-to.js';
 
 export function pickAdapter(url: string): Adapter {
   const { hostname } = new URL(url);
@@ -87,37 +87,37 @@ export function pickAdapter(url: string): Adapter {
   if (hostname.includes('aocp')) return makeAocpAdapter();
 
   if (hostname.includes('sei')) return makeSeiAdapter();
-  if (hostname.includes('compras')) return makeCompras_PortalAdapter();
+  if (hostname.includes('compras')) return makeComprasPortalAdapter();
   if (hostname.includes('lexml')) return makeLexmlAdapter();
 
-  if (hostname.includes('diariomunicipal') || hostname.includes('imprensaoficial')) return makeDom_CidadesAdapter();
+  if (hostname.includes('diariomunicipal') || hostname.includes('imprensaoficial')) return makeDomCidadesAdapter();
 
   const ufMap: Record<string, () => Adapter> = {
-    'doe.ac.gov.br': makeDoe_AcAdapter,
-    'doe.al.gov.br': makeDoe_AlAdapter,
-    'doe.am.gov.br': makeDoe_AmAdapter,
-    'doe.ap.gov.br': makeDoe_ApAdapter,
-    'doe.ba.gov.br': makeDoe_BaAdapter,
-    'doe.ce.gov.br': makeDoe_CeAdapter,
-    'diariooficial.df.gov.br': makeDoe_DfAdapter,
-    'ioes.gov.br': makeDoe_EsAdapter,
-    'imprensaoficial.go.gov.br': makeDoe_GoAdapter,
-    'diariooficial.ma.gov.br': makeDoe_MaAdapter,
-    'diariooficial.mg.gov.br': makeDoe_MgAdapter,
-    'doems.ms.gov.br': makeDoe_MsAdapter,
-    'ioepa.pa.gov.br': makeDoe_PaAdapter,
-    'diariooficial.pb.gov.br': makeDoe_PbAdapter,
-    'diariooficial.pe.gov.br': makeDoe_PeAdapter,
-    'diariooficial.pi.gov.br': makeDoe_PiAdapter,
-    'imprensaoficial.pr.gov.br': makeDoe_PrAdapter,
-    'imprensaoficial.rj.gov.br': makeDoe_RjAdapter,
-    'diariooficial.rn.gov.br': makeDoe_RnAdapter,
-    'diariooficial.ro.gov.br': makeDoe_RoAdapter,
-    'diariooficial.rr.gov.br': makeDoe_RrAdapter,
-    'diariooficial.rs.gov.br': makeDoe_RsAdapter,
-    'doe.sc.gov.br': makeDoe_ScAdapter,
-    'diariooficial.se.gov.br': makeDoe_SeAdapter,
-    'diariooficial.to.gov.br': makeDoe_ToAdapter
+    'doe.ac.gov.br': makeDoeAcAdapter,
+    'doe.al.gov.br': makeDoeAlAdapter,
+    'doe.am.gov.br': makeDoeAmAdapter,
+    'doe.ap.gov.br': makeDoeApAdapter,
+    'doe.ba.gov.br': makeDoeBaAdapter,
+    'doe.ce.gov.br': makeDoeCeAdapter,
+    'diariooficial.df.gov.br': makeDoeDfAdapter,
+    'ioes.gov.br': makeDoeEsAdapter,
+    'imprensaoficial.go.gov.br': makeDoeGoAdapter,
+    'diariooficial.ma.gov.br': makeDoeMaAdapter,
+    'diariooficial.mg.gov.br': makeDoeMgAdapter,
+    'doems.ms.gov.br': makeDoeMsAdapter,
+    'ioepa.pa.gov.br': makeDoePaAdapter,
+    'diariooficial.pb.gov.br': makeDoePbAdapter,
+    'diariooficial.pe.gov.br': makeDoePeAdapter,
+    'diariooficial.pi.gov.br': makeDoePiAdapter,
+    'imprensaoficial.pr.gov.br': makeDoePrAdapter,
+    'imprensaoficial.rj.gov.br': makeDoeRjAdapter,
+    'diariooficial.rn.gov.br': makeDoeRnAdapter,
+    'diariooficial.ro.gov.br': makeDoeRoAdapter,
+    'diariooficial.rr.gov.br': makeDoeRrAdapter,
+    'diariooficial.rs.gov.br': makeDoeRsAdapter,
+    'doe.sc.gov.br': makeDoeScAdapter,
+    'diariooficial.se.gov.br': makeDoeSeAdapter,
+    'diariooficial.to.gov.br': makeDoeToAdapter
   };
 
   for (const key in ufMap) {

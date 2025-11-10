@@ -5,10 +5,17 @@ import { vectorProcessor } from './vectorJob.js';
 
 const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
 const connection = new IORedis(redisUrl, {
-  maxRetriesPerRequest: 3,
-  connectTimeout: 5000,
+  maxRetriesPerRequest: null,  // Exigido pelo BullMQ
+  connectTimeout: 10000,
   enableReadyCheck: true,
-  lazyConnect: false
+  retryStrategy(times) {
+    // Limitar tentativas de reconexão
+    if (times > 10) {
+      console.error('[Redis] Máximo de tentativas de reconexão atingido');
+      return null; // Para de tentar
+    }
+    return Math.min(times * 100, 3000); // Backoff exponencial até 3s
+  }
 });
 export const redis = connection;
 

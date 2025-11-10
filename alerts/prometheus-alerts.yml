@@ -1,0 +1,17 @@
+groups:
+- name: memodrops-api
+  rules:
+  - alert: HighErrorRate
+    expr: sum(rate(http_request_duration_seconds_count{status=~"5.."}[5m])) / sum(rate(http_request_duration_seconds_count[5m])) > 0.05
+    for: 10m
+    labels:
+      severity: page
+    annotations:
+      summary: "Erro 5xx acima de 5% por 10m"
+  - alert: SlowRequests
+    expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 1
+    for: 10m
+    labels:
+      severity: warn
+    annotations:
+      summary: "p95 de latência > 1s"

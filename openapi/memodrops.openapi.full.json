@@ -1,0 +1,329 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "MemoDrops API",
+    "version": "2.2.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.memodrops.io"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Prometheus",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/docs": {
+      "get": {
+        "summary": "Swagger UI",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Login",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "401": {
+            "description": "invalid_credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Register",
+        "responses": {
+          "201": {
+            "description": "Created"
+          },
+          "409": {
+            "description": "email_in_use"
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Refresh",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "invalid_refresh_token"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Logout",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/verify/request": {
+      "post": {
+        "summary": "Request email verification",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/verify/confirm": {
+      "post": {
+        "summary": "Confirm email verification",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "invalid_code"
+          }
+        }
+      }
+    },
+    "/auth/password/request": {
+      "post": {
+        "summary": "Request password reset",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/password/reset": {
+      "post": {
+        "summary": "Reset password",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "invalid_code"
+          }
+        }
+      }
+    },
+    "/auth/oauth/google": {
+      "post": {
+        "summary": "OAuth Google",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "invalid_google_token"
+          }
+        }
+      }
+    },
+    "/auth/oauth/apple": {
+      "post": {
+        "summary": "OAuth Apple",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "description": "invalid_apple_token"
+          }
+        }
+      }
+    },
+    "/auth/2fa/setup": {
+      "post": {
+        "summary": "Create TOTP secret",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/auth/2fa/enable": {
+      "post": {
+        "summary": "Enable TOTP",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "invalid_token"
+          }
+        }
+      }
+    },
+    "/auth/2fa/login": {
+      "post": {
+        "summary": "Login TOTP",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "invalid_token"
+          }
+        }
+      }
+    },
+    "/devices/register": {
+      "post": {
+        "summary": "Register FCM/APNs token",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/decks/public": {
+      "get": {
+        "summary": "List public decks",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/decks/{id}/clone": {
+      "post": {
+        "summary": "Clone deck",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "403": {
+            "description": "forbidden"
+          }
+        }
+      }
+    },
+    "/cards/{id}": {
+      "get": {
+        "summary": "Get card"
+      },
+      "patch": {
+        "summary": "Update card"
+      }
+    },
+    "/decks/{deckId}/cards": {
+      "get": {
+        "summary": "List deck cards"
+      }
+    },
+    "/decks/{deckId}/cards/due": {
+      "get": {
+        "summary": "Due cards"
+      }
+    },
+    "/stats/decks/{deckId}": {
+      "get": {
+        "summary": "Deck stats"
+      }
+    },
+    "/stats/heatmap/{userId}": {
+      "get": {
+        "summary": "User heatmap"
+      }
+    },
+    "/search/cards": {
+      "get": {
+        "summary": "Full\u2011text search"
+      }
+    },
+    "/import/upload/csv": {
+      "post": {
+        "summary": "Import CSV"
+      }
+    },
+    "/import/upload/anki": {
+      "post": {
+        "summary": "Import Anki"
+      }
+    },
+    "/me": {
+      "patch": {
+        "summary": "Update profile"
+      },
+      "delete": {
+        "summary": "Delete account"
+      }
+    },
+    "/me/prefs": {
+      "patch": {
+        "summary": "Update preferences"
+      }
+    },
+    "/me/export": {
+      "get": {
+        "summary": "Export my data"
+      }
+    }
+  }
+}

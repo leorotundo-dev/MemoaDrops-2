@@ -40,7 +40,7 @@ export async function importMultipartRoutes(app: FastifyInstance){
     if (!data) return reply.code(400).send({ error: 'file_required' });
     const buf = await data.toBuffer();
     const zip = new AdmZip(buf);
-    const entries = zip.getEntries().map((e: any) => e.entryName);
+    const entries = zip.getEntries().map(e => e.entryName);
     return { ok: true, entries }; // Client-side/worker depois processa para cards
   });
 }

@@ -7,6 +7,9 @@ import { searchConcursosMock } from './services/scraper.js';
 import { semanticSearch } from './services/vectorSearch.js';
 import { makeRateLimit } from './plugins/rateLimit.js';
 import { errorHandlerPlugin } from './errors/errorHandler.js';
+import sentry from './plugins/sentry.js';
+import security from './plugins/security.js';
+import { metricsOnResponse } from './metrics/metrics.js';
 
 // Legacy routes (concursos/scraping)
 import { adminRoutes } from './routes/admin.js';
@@ -38,12 +41,17 @@ import { importMultipartRoutes } from './routes/import-multipart.js';
 
 const app = Fastify({ logger: true });
 
+await app.register(sentry);
+await app.register(security);
+
 await app.register(cors, { 
   origin: (process.env.CORS_ORIGIN || '*').split(','), 
   credentials: true 
 });
 
 await app.register(errorHandlerPlugin);
+
+app.addHook('onResponse', metricsOnResponse());
 
 const rateLimit = makeRateLimit(app, { maxPerMinute: 120 });
 

@@ -253,7 +253,7 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     const { rows: users } = await pool.query(`
-      SELECT id, name, email, plan, role, cash, created_at, last_login, is_banned
+      SELECT id, name, email, plan, role, cash, created_at, is_banned
       FROM users
       ${whereClause}
       ORDER BY created_at DESC

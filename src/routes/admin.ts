@@ -6,6 +6,36 @@ import { pool } from '../db/connection.js';
 export async function adminRoutes(app: FastifyInstance) {
   
   // ============================================
+  // CRIAR USUÁRIO ADMIN (Setup Inicial)
+  // ============================================
+  
+  app.post('/admin/setup/create-admin', async (request, reply) => {
+    try {
+      const { email, password, name } = request.body as { email: string; password: string; name?: string };
+      
+      // Verificar se já existe
+      const { rows: existing } = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+      
+      if (existing.length > 0) {
+        // Atualizar para superadmin
+        await pool.query('UPDATE users SET role = $1 WHERE email = $2', ['superadmin', email]);
+        return { message: 'Usuário existente atualizado para superadmin', email };
+      }
+      
+      // Criar novo usuário admin
+      const { rows: [newUser] } = await pool.query(`
+        INSERT INTO users (email, password_hash, name, role, plan, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        RETURNING id, email, name, role
+      `, [email, password, name || 'Admin', 'superadmin', 'premium']);
+      
+      return { message: 'Superadmin criado com sucesso!', user: newUser };
+    } catch (error: any) {
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+  
+  // ============================================
   // ESTATÍSTICAS GERAIS (Dashboard Principal)
   // ============================================
   

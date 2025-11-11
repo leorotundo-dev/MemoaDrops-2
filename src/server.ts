@@ -135,8 +135,8 @@ app.get('/concursos/:contestId/search', { preHandler: [rateLimit] }, async (req,
 // SSE (progresso)
 await jobsStreamRoutes(app);
 // Admin endpoints
-await adminRoutes(app);
-await registerAdminUserRoutes(app);
+await registerAdminUserRoutes(app);  // PRIMEIRO - endpoints específicos
+await adminRoutes(app);               // DEPOIS - endpoints gerais
 // Migration endpoint (temporary)
 await migrateRoutes(app);
 

@@ -93,13 +93,23 @@ export async function adminRoutes(app: FastifyInstance) {
       // Conteúdo
       const { rows: [contests] } = await pool.query('SELECT COUNT(*)::int AS contests FROM concursos');
       const { rows: [subjects] } = await pool.query('SELECT COUNT(*)::int AS subjects FROM materias');
-      const { rows: [publicDecks] } = await pool.query('SELECT COUNT(*)::int AS public_decks FROM decks WHERE is_public = true');
-      const { rows: [publicCards] } = await pool.query(`
-        SELECT COUNT(*)::int AS public_cards 
-        FROM cards c 
-        JOIN decks d ON c.deck_id = d.id 
-        WHERE d.is_public = true
-      `);
+      
+      // Verificar se tabela decks existe antes de consultar
+      let publicDecks = { public_decks: 0 };
+      let publicCards = { public_cards: 0 };
+      try {
+        const { rows: [pd] } = await pool.query('SELECT COUNT(*)::int AS public_decks FROM decks WHERE is_public = true');
+        publicDecks = pd;
+        const { rows: [pc] } = await pool.query(`
+          SELECT COUNT(*)::int AS public_cards 
+          FROM cards c 
+          JOIN decks d ON c.deck_id = d.id 
+          WHERE d.is_public = true
+        `);
+        publicCards = pc;
+      } catch (e) {
+        // Tabelas decks/cards não existem ainda
+      }
 
       // Sistema
       const apiStatus = 'healthy';

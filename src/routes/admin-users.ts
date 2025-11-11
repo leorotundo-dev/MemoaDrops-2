@@ -1,16 +1,11 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { pool } from '../db/connection';
-
-async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
-  const role = (req as any).role || (req as any).user?.role;
-  if (role !== 'admin' && role !== 'superadmin') {
-    return reply.status(403).send({ error: 'Forbidden' });
-  }
-}
+import { authenticate } from '../middleware/authenticate.js';
+import { requireAdmin } from '../middleware/authorize.js';
 
 export async function registerAdminUserRoutes(app: FastifyInstance) {
   // Lista com filtros e paginação
-  app.get('/admin/users', { preHandler: [requireAdmin] }, async (req, reply) => {
+  app.get('/admin/users', { preHandler: [authenticate, requireAdmin] }, async (req, reply) => {
     const { q, plan, status, page = '1', pageSize = '20' } = (req.query || {}) as any;
     const p = Number(page) || 1;
     const ps = Math.min(Math.max(Number(pageSize) || 20, 1), 100);
@@ -32,7 +27,7 @@ export async function registerAdminUserRoutes(app: FastifyInstance) {
     return { items: rows, page: p, pageSize: ps };
   });
 
-  app.get('/admin/users/:id', { preHandler: [requireAdmin] }, async (req, reply) => {
+  app.get('/admin/users/:id', { preHandler: [authenticate, requireAdmin] }, async (req, reply) => {
     const { id } = req.params as any;
     const { rows } = await pool.query(
       'SELECT id, name, email, plan, COALESCE(cash,0) AS cash, COALESCE(is_banned,false) AS is_banned, last_login_at FROM users WHERE id=$1',
@@ -58,7 +53,7 @@ export async function registerAdminUserRoutes(app: FastifyInstance) {
     return rows[0];
   });
 
-  app.post('/admin/users/:id/add-cash', { preHandler: [requireAdmin] }, async (req, reply) => {
+  app.post('/admin/users/:id/add-cash', { preHandler: [authenticate, requireAdmin] }, async (req, reply) => {
     const { id } = req.params as any;
     const { amount } = (req.body || {}) as any;
     if (!amount || Number(amount) <= 0) return reply.status(400).send({ error: 'Invalid amount' });
@@ -66,19 +61,19 @@ export async function registerAdminUserRoutes(app: FastifyInstance) {
     return { message: 'Credits added' };
   });
 
-  app.post('/admin/users/:id/ban', { preHandler: [requireAdmin] }, async (req, reply) => {
+  app.post('/admin/users/:id/ban', { preHandler: [authenticate, requireAdmin] }, async (req, reply) => {
     const { id } = req.params as any;
     await pool.query('UPDATE users SET is_banned = true, banned_at = NOW() WHERE id=$1', [id]);
     return { message: 'User banned' };
   });
 
-  app.post('/admin/users/:id/unban', { preHandler: [requireAdmin] }, async (req, reply) => {
+  app.post('/admin/users/:id/unban', { preHandler: [authenticate, requireAdmin] }, async (req, reply) => {
     const { id } = req.params as any;
     await pool.query('UPDATE users SET is_banned = false, banned_at = NULL WHERE id=$1', [id]);
     return { message: 'User unbanned' };
   });
 
-  app.get('/admin/users/:id/stats', { preHandler: [requireAdmin] }, async (req, reply) => {
+  app.get('/admin/users/:id/stats', { preHandler: [authenticate, requireAdmin] }, async (req, reply) => {
     const { id } = req.params as any;
     try {
       const decks = await pool.query('SELECT COUNT(*)::int AS c FROM decks WHERE user_id=$1', [id]);
@@ -117,7 +112,7 @@ export async function registerAdminUserRoutes(app: FastifyInstance) {
     } catch { return []; }
   });
 
-  app.get('/admin/users/:id/activity', { preHandler: [requireAdmin] }, async (req, reply) => {
+  app.get('/admin/users/:id/activity', { preHandler: [authenticate, requireAdmin] }, async (req, reply) => {
     const { id } = req.params as any;
     try {
       const { rows } = await pool.query(

@@ -41,6 +41,8 @@ import { importMultipartRoutes } from './routes/import-multipart.js';
 import { notificationPrefsRoutes } from './routes/notification-prefs.js';
 import { adminCostsRoutes } from './routes/admin.costs.js';
 import { registerAdminUserRoutes } from './routes/admin-users.js';
+import { registerAdminScraperRoutes } from './routes/admin.scrapers.js';
+import { registerAdminBancaRoutes } from './routes/admin.bancas.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -135,8 +137,10 @@ app.get('/concursos/:contestId/search', { preHandler: [rateLimit] }, async (req,
 // SSE (progresso)
 await jobsStreamRoutes(app);
 // Admin endpoints
-await registerAdminUserRoutes(app);  // PRIMEIRO - endpoints específicos
-await adminRoutes(app);               // DEPOIS - endpoints gerais
+await registerAdminUserRoutes(app);   // Gestão de usuários
+await registerAdminScraperRoutes(app); // Gestão de scrapers
+await registerAdminBancaRoutes(app);   // Gestão de bancas
+await adminRoutes(app);                // Endpoints gerais
 // Migration endpoint (temporary)
 await migrateRoutes(app);
 

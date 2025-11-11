@@ -184,6 +184,49 @@ export async function adminRoutes(app: FastifyInstance) {
     return stats;
   });
 
+  // Endpoint separado para custos
+  app.get('/admin/costs', async () => {
+    try {
+      const { rows: costsByCategory } = await pool.query(`
+        SELECT category, SUM(amount)::numeric AS total
+        FROM api_costs
+        WHERE period_start >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY category
+      `);
+      
+      const { rows: costsByService } = await pool.query(`
+        SELECT service, category, SUM(amount)::numeric AS total, description
+        FROM api_costs
+        WHERE period_start >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY service, category, description
+        ORDER BY total DESC
+      `);
+      
+      const { rows: [totalCostRow] } = await pool.query(`
+        SELECT COALESCE(SUM(amount), 0)::numeric AS total
+        FROM api_costs
+        WHERE period_start >= CURRENT_DATE - INTERVAL '30 days'
+      `);
+      
+      return {
+        total_cost: parseFloat(totalCostRow?.total || '0'),
+        by_category: costsByCategory.reduce((acc: any, row: any) => {
+          acc[row.category] = parseFloat(row.total);
+          return acc;
+        }, {}),
+        by_service: costsByService.map((row: any) => ({
+          service: row.service,
+          category: row.category,
+          total: parseFloat(row.total),
+          description: row.description
+        }))
+      };
+    } catch (error: any) {
+      console.error('Error fetching costs:', error);
+      return { total_cost: 0, by_category: {}, by_service: [] };
+    }
+  });
+
   // ============================================
   // GESTÃO DE USUÁRIOS
   // ============================================

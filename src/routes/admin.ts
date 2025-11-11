@@ -9,6 +9,16 @@ export async function adminRoutes(app: FastifyInstance) {
   // CRIAR USUÁRIO ADMIN (Setup Inicial)
   // ============================================
   
+  app.post('/admin/setup/run-migration', async (request, reply) => {
+    try {
+      const { sql } = request.body as { sql: string };
+      await pool.query(sql);
+      return { message: 'Migration executada com sucesso!' };
+    } catch (error: any) {
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+  
   app.post('/admin/setup/create-admin', async (request, reply) => {
     try {
       const { email, password, name } = request.body as { email: string; password: string; name?: string };

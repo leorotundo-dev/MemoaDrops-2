@@ -40,6 +40,7 @@ import { devicesRoutes } from './routes/devices.js';
 import { importMultipartRoutes } from './routes/import-multipart.js';
 import { notificationPrefsRoutes } from './routes/notification-prefs.js';
 import { adminCostsRoutes } from './routes/admin.costs.js';
+import { registerAdminUserRoutes } from './routes/admin-users.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -135,6 +136,7 @@ app.get('/concursos/:contestId/search', { preHandler: [rateLimit] }, async (req,
 await jobsStreamRoutes(app);
 // Admin endpoints
 await adminRoutes(app);
+await registerAdminUserRoutes(app);
 // Migration endpoint (temporary)
 await migrateRoutes(app);
 

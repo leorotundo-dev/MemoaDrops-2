@@ -39,6 +39,7 @@ import { totpRoutes } from './routes/totp.js';
 import { devicesRoutes } from './routes/devices.js';
 import { importMultipartRoutes } from './routes/import-multipart.js';
 import { notificationPrefsRoutes } from './routes/notification-prefs.js';
+import { adminCostsRoutes } from './routes/admin.costs.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -81,6 +82,7 @@ await app.register(totpRoutes);
 await app.register(devicesRoutes);
 await app.register(importMultipartRoutes);
 await app.register(notificationPrefsRoutes);
+await app.register(adminCostsRoutes);
 
 // ============================================
 // LEGACY ROUTES (concursos/scraping)

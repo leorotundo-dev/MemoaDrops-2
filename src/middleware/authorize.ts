@@ -30,3 +30,14 @@ export async function authorizeCard(req: FastifyRequest, _reply: FastifyReply): 
   if (!rows[0]) throw new AppError('Recurso não encontrado', 404);
   if (rows[0].user_id !== userId) throw new AppError('Proibido', 403);
 }
+
+export async function requireAdmin(req: FastifyRequest, _reply: FastifyReply): Promise<void> {
+  const userId = (req as any).userId as string | undefined;
+  if (!userId) {
+    throw new AppError('Não autenticado', 401);
+  }
+  const { rows } = await pool.query('SELECT role FROM users WHERE id=$1', [userId]);
+  if (!rows[0] || (rows[0].role !== 'admin' && rows[0].role !== 'superadmin')) {
+    throw new AppError('Acesso negado: requer permissão de admin', 403);
+  }
+}

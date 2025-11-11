@@ -232,40 +232,8 @@ export async function adminRoutes(app: FastifyInstance) {
   // ============================================
 
   // Listar usuários com paginação e filtros
-  app.get('/admin/users', async (req, reply) => {
-    const { page = 1, limit = 20, search = '', plan = '' } = req.query as any;
-    const offset = (page - 1) * limit;
-
-    let whereClause = 'WHERE 1=1';
-    const params: any[] = [];
-    let paramIndex = 1;
-
-    if (search) {
-      whereClause += ` AND (name ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`;
-      params.push(`%${search}%`);
-      paramIndex++;
-    }
-
-    if (plan) {
-      whereClause += ` AND plan = $${paramIndex}`;
-      params.push(plan);
-      paramIndex++;
-    }
-
-    const { rows: users } = await pool.query(`
-      SELECT id, name, email, plan, role, cash, created_at, is_banned
-      FROM users
-      ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-    `, [...params, limit, offset]);
-
-    const { rows: [{ total }] } = await pool.query(`
-      SELECT COUNT(*)::int AS total FROM users ${whereClause}
-    `, params);
-
-    return { users, total, page: parseInt(page), limit: parseInt(limit) };
-  });
+  // ENDPOINT REMOVIDO - Usar admin-users.ts ao invés deste
+  // app.get('/admin/users', ...) foi movido para src/routes/admin-users.ts
 
   // Adicionar crédito (cash) a um usuário
   app.post('/admin/users/:id/add-cash', async (req, reply) => {

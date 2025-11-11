@@ -85,7 +85,9 @@ export async function adminRoutes(app: FastifyInstance) {
     }
 
     // Custos
-    try {
+    try{
+
+      // Financeiro - calcular custos reais do banco
       const { rows: costsByCategory } = await pool.query(`
         SELECT category, SUM(amount)::numeric AS total
         FROM api_costs
@@ -93,11 +95,6 @@ export async function adminRoutes(app: FastifyInstance) {
         GROUP BY category
       `);
       
-      stats.finance.costs_by_category = costsByCategory.reduce((acc: any, row: any) => {
-        acc[row.category] = parseFloat(row.total);
-        return acc;
-      }, {});
-
       const { rows: costsByService } = await pool.query(`
         SELECT service, category, SUM(amount)::numeric AS total
         FROM api_costs
@@ -106,82 +103,91 @@ export async function adminRoutes(app: FastifyInstance) {
         ORDER BY total DESC
       `);
       
-      stats.finance.costs_by_service = costsByService.map((row: any) => ({
-        service: row.service,
-        category: row.category,
-        total: parseFloat(row.total)
-      }));
-
       const { rows: [totalCostRow] } = await pool.query(`
         SELECT COALESCE(SUM(amount), 0)::numeric AS total
         FROM api_costs
         WHERE period_start >= CURRENT_DATE - INTERVAL '30 days'
       `);
       
-      stats.finance.total_cost = parseFloat(totalCostRow?.total || '0');
-      stats.finance.mrr = 0; // TODO: calcular MRR real quando houver assinaturas
-    } catch (e) {
-      console.error('Error fetching costs:', e);
-    }
+      const totalCost = parseFloat(totalCostRow?.total || '0');
+      const mrr = 0; // TODO: calcular MRR real quando houver assinaturas
 
-    // Conteúdo
-    try {
+      // Conteúdo
       const { rows: [contests] } = await pool.query('SELECT COUNT(*)::int AS contests FROM concursos');
-      stats.content.contests = contests?.contests || 0;
-    } catch (e) {
-      // Tabela concursos não existe
-    }
-
-    try {
       const { rows: [subjects] } = await pool.query('SELECT COUNT(*)::int AS subjects FROM materias');
-      stats.content.subjects = subjects?.subjects || 0;
-    } catch (e) {
-      // Tabela materias não existe
-    }
+      
+      // Verificar se tabela decks existe antes de consultar
+      let publicDecks = { public_decks: 0 };
+      let publicCards = { public_cards: 0 };
+      try {
+        const { rows: [pd] } = await pool.query('SELECT COUNT(*)::int AS public_decks FROM decks WHERE is_public = true');
+        publicDecks = pd;
+        const { rows: [pc] } = await pool.query(`
+          SELECT COUNT(*)::int AS public_cards 
+          FROM cards c 
+          JOIN decks d ON c.deck_id = d.id 
+          WHERE d.is_public = true
+        `);
+        publicCards = pc;
+      } catch (e) {
+        // Tabelas decks/cards não existem ainda
+      }
 
-    try {
-      const { rows: [publicDecks] } = await pool.query('SELECT COUNT(*)::int AS public_decks FROM decks WHERE is_public = true');
-      stats.content.public_decks = publicDecks?.public_decks || 0;
-
-      const { rows: [publicCards] } = await pool.query(`
-        SELECT COUNT(*)::int AS public_cards 
-        FROM cards c 
-        JOIN decks d ON c.deck_id = d.id 
-        WHERE d.is_public = true
-      `);
-      stats.content.public_cards = publicCards?.public_cards || 0;
-    } catch (e) {
-      // Tabelas decks/cards não existem
-    }
-
-    // Sistema - Jobs
-    try {
+      // Sistema
+      const apiStatus = 'healthy';
+      const dbStatus = 'healthy';
       const { rows: [activeJobs] } = await pool.query(`
         SELECT COUNT(*)::int AS active_jobs 
         FROM jobs 
         WHERE status IN ('active', 'waiting')
       `);
-      stats.system.active_jobs = activeJobs?.active_jobs || 0;
-
       const { rows: [failedJobs] } = await pool.query(`
         SELECT COUNT(*)::int AS failed_jobs 
         FROM jobs 
         WHERE status = 'failed'
       `);
-      stats.system.failed_jobs = failedJobs?.failed_jobs || 0;
-    } catch (e) {
-      // Tabela jobs não existe
-    }
 
-    // Testar conexão com DB
-    try {
-      await pool.query('SELECT 1');
-      stats.system.db_status = 'healthy';
-    } catch (e) {
-      stats.system.db_status = 'error';
+      return {
+        users: {
+          total: usersCount?.total || 0,
+          active_dau: activeDAU?.active_dau || 0,
+          active_mau: activeMAU?.active_mau || 0
+        },
+        finance: {
+          mrr,
+          total_cost: totalCost,
+          costs_by_category: costsByCategory.reduce((acc: any, row: any) => {
+            acc[row.category] = parseFloat(row.total);
+            return acc;
+          }, {}),
+          costs_by_service: costsByService.map((row: any) => ({
+            service: row.service,
+            category: row.category,
+            total: parseFloat(row.total)
+          }))
+        },
+        content: {
+          contests: contests?.contests || 0,
+          subjects: subjects?.subjects || 0,
+          public_decks: publicDecks?.public_decks || 0,
+          public_cards: publicCards?.public_cards || 0
+        },
+        system: {
+          api_status: apiStatus,
+          db_status: dbStatus,
+          active_jobs: activeJobs?.active_jobs || 0,
+          failed_jobs: failedJobs?.failed_jobs || 0
+        }
+      };
+    } catch (error: any) {
+      console.error('Error fetching admin stats:', error);
+      return {
+        users: { total: 0, active_dau: 0, active_mau: 0 },
+        finance: { mrr: 0, total_cost: 0, costs_by_category: {}, costs_by_service: [] },
+        content: { contests: 0, subjects: 0, public_decks: 0, public_cards: 0 },
+        system: { api_status: 'error', db_status: 'error', active_jobs: 0, failed_jobs: 0 }
+      };
     }
-
-    return stats;
   });
 
   // ============================================

@@ -50,7 +50,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // ============================================
   
   app.get('/admin/stats', async () => {
-    const stats = {
+    const stats: any = {
       users: { total: 0, active_dau: 0, active_mau: 0 },
       finance: { mrr: 0, total_cost: 0, costs_by_category: {}, costs_by_service: [] },
       content: { contests: 0, subjects: 0, public_decks: 0, public_cards: 0 },

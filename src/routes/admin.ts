@@ -351,7 +351,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const scrapeJobs = await scrapeQueue.getJobs(['active', 'waiting', 'failed', 'completed'], 0, 50);
     const vectorJobs = await vectorQueue.getJobs(['active', 'waiting', 'failed', 'completed'], 0, 50);
 
-    const formatJob = (j: any) => ({
+    const formatJob = async (j: any) => ({
       id: j.id,
       name: j.name,
       status: await j.getState(),

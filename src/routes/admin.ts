@@ -73,8 +73,7 @@ export async function adminRoutes(app: FastifyInstance) {
       `);
       
       const { rows: costsByService } = await pool.query(`
-        SELECT service, category, SUM(amount)::numeric AS total, 
-               jsonb_agg(jsonb_build_object('description', description, 'amount', amount, 'usage', usage_details)) AS details
+        SELECT service, category, SUM(amount)::numeric AS total
         FROM api_costs
         WHERE period_start >= CURRENT_DATE - INTERVAL '30 days'
         GROUP BY service, category
@@ -141,8 +140,7 @@ export async function adminRoutes(app: FastifyInstance) {
           costs_by_service: costsByService.map((row: any) => ({
             service: row.service,
             category: row.category,
-            total: parseFloat(row.total),
-            details: row.details
+            total: parseFloat(row.total)
           }))
         },
         content: {

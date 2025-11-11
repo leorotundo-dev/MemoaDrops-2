@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
-import cors from '@fastify/cors';
+// CORS is now registered in security plugin
 import { pool } from './db/connection.js';
 
 import { searchConcursosMock } from './services/scraper.js';
@@ -45,10 +45,7 @@ const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 await app.register(sentry);
 await app.register(security);
 
-await app.register(cors, { 
-  origin: (process.env.CORS_ORIGIN || '*').split(','), 
-  credentials: true 
-});
+// CORS is now registered in security plugin
 
 await app.register(errorHandlerPlugin);
 

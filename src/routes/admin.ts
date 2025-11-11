@@ -56,17 +56,39 @@ export async function adminRoutes(app: FastifyInstance) {
       const { rows: [activeDAU] } = await pool.query(`
         SELECT COUNT(DISTINCT user_id)::int AS active_dau 
         FROM study_sessions 
-        WHERE created_at >= NOW() - INTERVAL '1 day'
+        WHERE session_date >= NOW() - INTERVAL '1 day'
       `);
       const { rows: [activeMAU] } = await pool.query(`
         SELECT COUNT(DISTINCT user_id)::int AS active_mau 
         FROM study_sessions 
-        WHERE created_at >= NOW() - INTERVAL '30 days'
+        WHERE session_date >= NOW() - INTERVAL '30 days'
       `);
 
-      // Financeiro (valores mockados por enquanto - você pode implementar tabelas reais)
-      const mrr = 2500.00; // TODO: calcular do banco
-      const totalCost = 800.00; // TODO: somar custos do banco
+      // Financeiro - calcular custos reais do banco
+      const { rows: costsByCategory } = await pool.query(`
+        SELECT category, SUM(amount)::numeric AS total
+        FROM api_costs
+        WHERE period_start >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY category
+      `);
+      
+      const { rows: costsByService } = await pool.query(`
+        SELECT service, category, SUM(amount)::numeric AS total, 
+               jsonb_agg(jsonb_build_object('description', description, 'amount', amount, 'usage', usage_details)) AS details
+        FROM api_costs
+        WHERE period_start >= CURRENT_DATE - INTERVAL '30 days'
+        GROUP BY service, category
+        ORDER BY total DESC
+      `);
+      
+      const { rows: [totalCostRow] } = await pool.query(`
+        SELECT COALESCE(SUM(amount), 0)::numeric AS total
+        FROM api_costs
+        WHERE period_start >= CURRENT_DATE - INTERVAL '30 days'
+      `);
+      
+      const totalCost = parseFloat(totalCostRow?.total || '0');
+      const mrr = 0; // TODO: calcular MRR real quando houver assinaturas
 
       // Conteúdo
       const { rows: [contests] } = await pool.query('SELECT COUNT(*)::int AS contests FROM concursos');
@@ -101,7 +123,17 @@ export async function adminRoutes(app: FastifyInstance) {
         },
         finance: {
           mrr,
-          total_cost: totalCost
+          total_cost: totalCost,
+          costs_by_category: costsByCategory.reduce((acc: any, row: any) => {
+            acc[row.category] = parseFloat(row.total);
+            return acc;
+          }, {}),
+          costs_by_service: costsByService.map((row: any) => ({
+            service: row.service,
+            category: row.category,
+            total: parseFloat(row.total),
+            details: row.details
+          }))
         },
         content: {
           contests: contests?.contests || 0,
@@ -120,7 +152,7 @@ export async function adminRoutes(app: FastifyInstance) {
       console.error('Error fetching admin stats:', error);
       return {
         users: { total: 0, active_dau: 0, active_mau: 0 },
-        finance: { mrr: 0, total_cost: 0 },
+        finance: { mrr: 0, total_cost: 0, costs_by_category: {}, costs_by_service: [] },
         content: { contests: 0, subjects: 0, public_decks: 0, public_cards: 0 },
         system: { api_status: 'error', db_status: 'error', active_jobs: 0, failed_jobs: 0 }
       };

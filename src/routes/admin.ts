@@ -576,7 +576,6 @@ export async function adminRoutes(app: FastifyInstance) {
     `);
     return { tables: rows.map(r => r.table_name) };
   });
-}
 
   // ============================================
   // BANCAS ORGANIZADORAS

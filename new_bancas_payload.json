@@ -1,0 +1,122 @@
+[
+  {
+    "name": "idecan",
+    "display_name": "IDECAN",
+    "website": "https://idecan.org.br",
+    "concursos_url": "https://idecan.org.br",
+    "is_active": true,
+    "priority": 60,
+    "tier": 2,
+    "notes": "Instituto de Desenvolvimento Educacional - Forte em concursos policiais"
+  },
+  {
+    "name": "iades",
+    "display_name": "IADES",
+    "website": "https://www.iades.com.br",
+    "concursos_url": "https://www.iades.com.br/inscricao/?v=andamento",
+    "is_active": true,
+    "priority": 55,
+    "tier": 2,
+    "notes": "Instituto Americano de Desenvolvimento - Forte no DF"
+  },
+  {
+    "name": "fundatec",
+    "display_name": "FUNDATEC",
+    "website": "https://www.fundatec.org.br",
+    "concursos_url": "https://www.fundatec.org.br/portal/concursos/concursos_abertos.php",
+    "is_active": true,
+    "priority": 50,
+    "tier": 2,
+    "notes": "Principal banca do Rio Grande do Sul"
+  },
+  {
+    "name": "ibade",
+    "display_name": "IBADE",
+    "website": "https://www.ibade.org.br",
+    "concursos_url": "https://www.ibade.org.br",
+    "is_active": true,
+    "priority": 45,
+    "tier": 2,
+    "notes": "Instituto Brasileiro de Apoio - Forte no RJ e ES"
+  },
+  {
+    "name": "consulplan",
+    "display_name": "CONSULPLAN",
+    "website": "https://www.institutoconsulplan.org.br",
+    "concursos_url": "https://www.institutoconsulplan.org.br",
+    "is_active": true,
+    "priority": 40,
+    "tier": 2,
+    "notes": "Instituto Consulplan - Diversos estados"
+  },
+  {
+    "name": "objetiva",
+    "display_name": "OBJETIVA",
+    "website": "https://www.objetivas.com.br",
+    "concursos_url": "https://www.objetivas.com.br",
+    "is_active": true,
+    "priority": 35,
+    "tier": 2,
+    "notes": "Objetiva Concursos - Forte em concursos municipais"
+  },
+  {
+    "name": "fadesp",
+    "display_name": "FADESP",
+    "website": "https://www.fadesp.org.br",
+    "concursos_url": "https://www.fadesp.org.br",
+    "is_active": true,
+    "priority": 30,
+    "tier": 2,
+    "notes": "Fundação de Amparo - Principal banca da região Norte"
+  },
+  {
+    "name": "cetro",
+    "display_name": "CETRO",
+    "website": "https://www.cetroconcursos.org.br",
+    "concursos_url": "https://www.cetroconcursos.org.br",
+    "is_active": true,
+    "priority": 25,
+    "tier": 3,
+    "notes": "Centro de Estudos - SP e região"
+  },
+  {
+    "name": "funcern",
+    "display_name": "FUNCERN",
+    "website": "https://www.funcern.br",
+    "concursos_url": "https://www.funcern.br",
+    "is_active": true,
+    "priority": 20,
+    "tier": 3,
+    "notes": "Fundação de Apoio - Principal banca do RN"
+  },
+  {
+    "name": "copeve_ufal",
+    "display_name": "COPEVE/UFAL",
+    "website": "https://www.copeve.ufal.br",
+    "concursos_url": "https://www.copeve.ufal.br",
+    "is_active": true,
+    "priority": 15,
+    "tier": 3,
+    "notes": "Comissão Permanente da UFAL - Principal banca de Alagoas"
+  },
+  {
+    "name": "fepese",
+    "display_name": "FEPESE",
+    "website": "https://www.fepese.org.br",
+    "concursos_url": "https://www.fepese.org.br",
+    "is_active": true,
+    "priority": 10,
+    "tier": 3,
+    "notes": "Fundação de Estudos - Principal banca de Santa Catarina"
+  },
+  {
+    "name": "fumarc",
+    "display_name": "FUMARC",
+    "website": "https://www.fumarc.org.br",
+    "concursos_url": "https://www.fumarc.org.br",
+    "is_active": true,
+    "priority": 5,
+    "tier": 3,
+    "notes": "Fundação Mariana Resende Costa - Forte em Minas Gerais"
+  }
+]

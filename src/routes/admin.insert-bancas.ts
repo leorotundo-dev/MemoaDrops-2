@@ -11,8 +11,7 @@ export default async function (app: FastifyInstance) {
       const bancas = request.body as Array<{
         name: string;
         display_name: string;
-        website?: string;
-        concursos_url?: string;
+        website_url?: string;
         is_active?: boolean;
         priority?: number;
         tier?: number;
@@ -63,25 +62,19 @@ export default async function (app: FastifyInstance) {
             INSERT INTO bancas (
               name,
               display_name,
-              website,
-              concursos_url,
+              website_url,
+              description,
               is_active,
-              priority,
-              tier,
-              notes,
               created_at,
               updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+            ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
             RETURNING id, name, display_name
           `, [
             banca.name,
             banca.display_name,
-            banca.website || null,
-            banca.concursos_url || null,
-            banca.is_active !== undefined ? banca.is_active : true,
-            banca.priority || 50,
-            banca.tier || 2,
-            banca.notes || null
+            banca.website_url || null,
+            banca.notes || null,
+            banca.is_active !== undefined ? banca.is_active : true
           ]);
 
           results.push({

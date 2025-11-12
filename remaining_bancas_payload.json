@@ -1,0 +1,23 @@
+[
+  {
+    "name": "objetiva",
+    "display_name": "OBJETIVA",
+    "website_url": "https://www.objetivas.com.br",
+    "is_active": true,
+    "notes": "Objetiva Concursos - Forte em concursos municipais"
+  },
+  {
+    "name": "funcern",
+    "display_name": "FUNCERN",
+    "website_url": "https://www.funcern.br",
+    "is_active": true,
+    "notes": "Fundação de Apoio - Principal banca do RN"
+  },
+  {
+    "name": "fumarc",
+    "display_name": "FUMARC",
+    "website_url": "https://www.fumarc.org.br",
+    "is_active": true,
+    "notes": "Fundação Mariana Resende Costa - Forte em Minas Gerais"
+  }
+]

@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { pool } from '../db/connection';
+import { pool } from '../db/connection.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { requireAdmin } from '../middleware/authorize.js';
 

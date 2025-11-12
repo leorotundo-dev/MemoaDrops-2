@@ -21,7 +21,7 @@ const BANCA_CONTEST_URLS: Record<string, string> = {
   'fgv': 'https://conhecimento.fgv.br/concursos',
   'vunesp': 'https://www.vunesp.com.br/busca/concurso/inscricoes%20abertas',
   'cesgranrio': 'https://www.cesgranrio.org.br/concursos/',
-  'quadrix': 'https://www.quadrix.org.br/concursos.aspx',
+  'quadrix': 'https://site.quadrix.org.br/',
   'ibfc': 'https://www.ibfc.org.br/concursos-abertos',
   'aocp': 'https://www.institutoaocp.org.br/concursos',
 };
@@ -51,8 +51,8 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
       return [];
     }
 
-    // Bancas que requerem Puppeteer (bloqueiam HTTP normal)
-    const puppeteerBancas = ['cesgranrio', 'ibfc', 'aocp'];
+    // Bancas que requerem Puppeteer (bloqueiam HTTP normal ou usam JavaScript dinâmico)
+    const puppeteerBancas = ['cesgranrio', 'ibfc', 'aocp', 'vunesp'];
     
     if (puppeteerBancas.includes(banca.name.toLowerCase())) {
       console.log(`[Contest Discovery] Usando Puppeteer para ${banca.name}`);
@@ -74,14 +74,14 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
     // Seletores específicos por banca
     const bancaSelectors: Record<string, string[]> = {
       'cebraspe': [
+        'a.icon_with_title_link',
         'a[href*="/concursos/"]',
         '.q_circle_text_holder a',
-        'a.icon_with_title_link',
       ],
       'quadrix': [
-        'a[href*="todos-os-concursos"]',
+        'a[href*="/todos-os-concursos/inscricoes-abertas/"]',
+        'a[href*="/todos-os-concursos/"]',
         '.exam-card a',
-        'a[href*=".aspx"]',
       ],
       'vunesp': [
         'a[href*="concurso"]',
@@ -116,12 +116,19 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
             fullUrl = new URL(href, baseUrl.origin).toString();
           }
 
+          // Excluir link da própria página de concursos
+          if (fullUrl === contestUrl || fullUrl === contestUrl + '/') {
+            return;
+          }
+
           // Verificar se parece ser um link de concurso/edital
           if (
             fullUrl.includes('dou.') ||
             fullUrl.includes('edital') ||
             fullUrl.includes('concurso') ||
-            fullUrl.includes('.pdf')
+            fullUrl.includes('.pdf') ||
+            fullUrl.includes('/concursos/') || // CEBRASPE
+            fullUrl.includes('/todos-os-concursos/') // QUADRIX
           ) {
             contests.push({
               nome: text.substring(0, 255), // Limitar tamanho

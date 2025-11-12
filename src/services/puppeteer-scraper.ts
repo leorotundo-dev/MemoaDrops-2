@@ -63,6 +63,7 @@ export async function scrapeBancaContestsWithPuppeteer(
       'cesgranrio': 'a[href*="concurso"], .concurso a, a[href*="edital"]',
       'ibfc': 'a[href*="concurso"], .card a, a[href*="edital"]',
       'aocp': 'a[href*="concurso"], .concurso-item a, a[href*="edital"]',
+      'vunesp': 'a[href*="concurso"], .card a, a[href*="vunesp.com.br"]',
     };
 
     const selector = bancaSelectors[bancaName.toLowerCase()] || 'a[href*="concurso"]';

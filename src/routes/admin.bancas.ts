@@ -23,9 +23,8 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
       else if (sort === 'recent') order = 'ORDER BY last_contest_date DESC NULLS LAST';
 
       const sql = `
-        SELECT b.*, s.display_name AS scraper_name
+        SELECT b.*
         FROM bancas b
-        LEFT JOIN scrapers s ON b.scraper_id = s.id
         ${where}
         ${order}`;
       const { rows } = await pool.query(sql, params);

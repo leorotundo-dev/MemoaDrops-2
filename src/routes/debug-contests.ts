@@ -6,7 +6,7 @@ export default async function debugContests(app: FastifyInstance) {
     try {
       // Buscar todas as bancas com seus nomes e IDs
       const { rows: bancas } = await pool.query(`
-        SELECT id, name, sigla
+        SELECT id, name
         FROM bancas
         ORDER BY id
       `);
@@ -33,7 +33,6 @@ export default async function debugContests(app: FastifyInstance) {
       const resultado = bancas.map(b => ({
         id: b.id,
         name: b.name,
-        sigla: b.sigla,
         total_concursos: concursosPorBanca[b.id]?.length || 0,
         concursos: concursosPorBanca[b.id] || []
       }));

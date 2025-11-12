@@ -1,7 +1,13 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import { fileURLToPath } from 'url';
 // CORS is now registered in security plugin
 import { pool } from './db/connection.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // import { searchConcursosMock } from './services/scraper.js'; // Removido - não existe mais
 import { semanticSearch } from './services/vectorSearch.js';
@@ -50,6 +56,12 @@ await app.register(sentry);
 await app.register(security);
 
 // CORS is now registered in security plugin
+
+// Servir arquivos estáticos (logos, etc)
+await app.register(fastifyStatic, {
+  root: path.join(__dirname, '../public'),
+  prefix: '/',
+});
 
 await app.register(errorHandlerPlugin);
 

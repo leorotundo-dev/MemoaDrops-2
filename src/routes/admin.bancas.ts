@@ -39,7 +39,7 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
   // Criar banca
   app.post('/admin/bancas', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
     try {
-      const { name, display_name, short_name, website_url, logo_url, description, areas, scraper_id } = request.body as any;
+      let { name, display_name, short_name, website_url, logo_url, description, areas, scraper_id } = request.body as any;
       
       // Verificar se já existe banca com o mesmo name ou short_name
       const { rows: existing } = await pool.query(`
@@ -56,10 +56,32 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
         });
       }
       
+      // Criar a banca primeiro sem logo
       const { rows: [banca] } = await pool.query(`
         INSERT INTO bancas (name, display_name, short_name, website_url, logo_url, description, areas, scraper_id)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
         [name, display_name, short_name || null, website_url || null, logo_url || null, description || null, JSON.stringify(areas || []), scraper_id || null]);
+      
+      // Se não forneceu logo_url, tentar buscar automaticamente
+      if (!logo_url && display_name && banca.id) {
+        try {
+          const { fetchAndSaveLogo } = await import('../services/logo-fetcher.js');
+          const fetchedLogo = await fetchAndSaveLogo(display_name, banca.id, website_url);
+          if (fetchedLogo) {
+            // Atualizar a banca com o logo encontrado
+            const { rows: [updatedBanca] } = await pool.query(
+              'UPDATE bancas SET logo_url = $1 WHERE id = $2 RETURNING *',
+              [fetchedLogo, banca.id]
+            );
+            console.log(`Logo encontrado automaticamente para ${display_name}: ${fetchedLogo}`);
+            return updatedBanca;
+          }
+        } catch (err) {
+          console.error(`Erro ao buscar logo automaticamente para ${display_name}:`, err);
+          // Continuar sem logo
+        }
+      }
+      
       return banca;
     } catch (e: any) {
       // Tratar erro de constraint UNIQUE

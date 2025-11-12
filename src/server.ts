@@ -51,6 +51,7 @@ import { registerAdminScraperRoutes } from './routes/admin.scrapers.js';
 import { registerAdminBancaRoutes } from './routes/admin.bancas.js';
 import logosRoutes from './routes/logos.js';
 import { migrateLogosRoutes } from './routes/migrate-logos.js';
+import { backfillLogosRoutes } from './routes/backfill-logos.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -159,6 +160,7 @@ await adminRoutes(app);                // Endpoints gerais
 // Migration endpoint (temporary)
 await migrateRoutes(app);
 await migrateLogosRoutes(app);
+await backfillLogosRoutes(app);
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

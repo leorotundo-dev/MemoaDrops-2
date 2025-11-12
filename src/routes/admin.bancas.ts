@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { authenticate } from '../middleware/authenticate.js';
+import { requireAdmin } from '../middleware/authorize.js';
 import { pool } from '../db/connection.js';
 
 export async function registerAdminBancaRoutes(app: FastifyInstance) {

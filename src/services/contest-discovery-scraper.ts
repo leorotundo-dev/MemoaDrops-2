@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { pool } from '../db/connection.js';
+import { scrapeBancaContestsWithPuppeteer } from './puppeteer-scraper.js';
 
 /**
  * Interface para um concurso descoberto
@@ -18,7 +19,7 @@ const BANCA_CONTEST_URLS: Record<string, string> = {
   'cebraspe': 'https://www.cebraspe.org.br/concursos',
   'fcc': 'https://www.concursosfcc.com.br/concursos',
   'fgv': 'https://conhecimento.fgv.br/concursos',
-  'vunesp': 'https://www.vunesp.com.br/VUNESP/concursos.html',
+  'vunesp': 'https://www.vunesp.com.br/busca/concurso/inscricoes%20abertas',
   'cesgranrio': 'https://www.cesgranrio.org.br/concursos/',
   'quadrix': 'https://www.quadrix.org.br/concursos.aspx',
   'ibfc': 'https://www.ibfc.org.br/concursos-abertos',
@@ -50,7 +51,15 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
       return [];
     }
 
-    // Fazer requisição HTTP
+    // Bancas que requerem Puppeteer (bloqueiam HTTP normal)
+    const puppeteerBancas = ['cesgranrio', 'ibfc', 'aocp'];
+    
+    if (puppeteerBancas.includes(banca.name.toLowerCase())) {
+      console.log(`[Contest Discovery] Usando Puppeteer para ${banca.name}`);
+      return await scrapeBancaContestsWithPuppeteer(bancaId, banca.name, contestUrl);
+    }
+
+    // Fazer requisição HTTP normal
     const response = await axios.get(contestUrl, {
       timeout: 30000,
       headers: {
@@ -62,8 +71,27 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
     const $ = cheerio.load(response.data);
     const contests: DiscoveredContest[] = [];
 
-    // Seletores genéricos para encontrar links de concursos
-    const selectors = [
+    // Seletores específicos por banca
+    const bancaSelectors: Record<string, string[]> = {
+      'cebraspe': [
+        'a[href*="/concursos/"]',
+        '.q_circle_text_holder a',
+        'a.icon_with_title_link',
+      ],
+      'quadrix': [
+        'a[href*="todos-os-concursos"]',
+        '.exam-card a',
+        'a[href*=".aspx"]',
+      ],
+      'vunesp': [
+        'a[href*="concurso"]',
+        '.card a',
+        'a[href*="vunesp.com.br"]',
+      ],
+    };
+
+    // Usar seletores específicos da banca ou genéricos
+    const selectors = bancaSelectors[banca.name.toLowerCase()] || [
       'a[href*="concurso"]',
       'a[href*="edital"]',
       'a[href*="dou"]',
@@ -72,6 +100,8 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
       'table a',
     ];
 
+    console.log(`[Contest Discovery] Usando seletores: ${selectors.join(', ')}`);
+    
     for (const selector of selectors) {
       $(selector).each((_, element) => {
         const $el = $(element);
@@ -103,14 +133,33 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
       });
 
       // Se encontrou concursos, parar
-      if (contests.length > 0) break;
+      if (contests.length > 0) {
+        console.log(`[Contest Discovery] Seletor bem-sucedido: ${selector}`);
+        break;
+      }
+    }
+    
+    // Log se nenhum concurso foi encontrado
+    if (contests.length === 0) {
+      console.log(`[Contest Discovery] Nenhum concurso encontrado com os seletores fornecidos`);
     }
 
     console.log(`[Contest Discovery] Encontrados ${contests.length} concursos para ${banca.name}`);
     return contests;
 
-  } catch (error) {
-    console.error(`[Contest Discovery] Erro ao buscar concursos da banca ${bancaId}:`, error);
+  } catch (error: any) {
+    const errorMessage = error.response?.status 
+      ? `HTTP ${error.response.status} - ${error.response.statusText}`
+      : error.message || 'Erro desconhecido';
+    
+    console.error(`[Contest Discovery] Erro ao buscar concursos da banca ${bancaId}: ${errorMessage}`);
+    
+    // Log adicional para erros HTTP
+    if (error.response) {
+      console.error(`[Contest Discovery] Status: ${error.response.status}`);
+      console.error(`[Contest Discovery] URL: ${error.config?.url}`);
+    }
+    
     return [];
   }
 }

@@ -86,7 +86,7 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
           is_active = COALESCE($7, is_active),
           scraper_id = $8,
           updated_at = NOW()
-        WHERE id = $9
+        WHERE id = $9::uuid
         RETURNING *`,
         [display_name, short_name, website_url, logo_url, description, areas ? JSON.stringify(areas) : null, is_active, scraper_id, id]);
       if (!banca) return reply.status(404).send({ error: 'Banca not found' });
@@ -100,7 +100,7 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
   app.delete('/admin/bancas/:id', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
     try {
       const { id } = request.params as any;
-      const { rows: [banca] } = await pool.query('DELETE FROM bancas WHERE id=$1 RETURNING *', [id]);
+      const { rows: [banca] } = await pool.query('DELETE FROM bancas WHERE id=$1::uuid RETURNING *', [id]);
       if (!banca) return reply.status(404).send({ error: 'Banca not found' });
       return { message: 'Banca deleted successfully', banca };
     } catch (e: any) {
@@ -116,7 +116,7 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
         SELECT b.*, s.display_name AS scraper_name, s.id AS scraper_id
         FROM bancas b
         LEFT JOIN scrapers s ON b.scraper_id = s.id
-        WHERE b.id=$1`, [id]);
+        WHERE b.id=$1::uuid`, [id]);
       if (!banca) return reply.status(404).send({ error: 'Banca not found' });
       return banca;
     } catch (e: any) {

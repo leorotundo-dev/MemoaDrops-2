@@ -235,53 +235,9 @@ export async function adminRoutes(app: FastifyInstance) {
   // ENDPOINT REMOVIDO - Usar admin-users.ts ao invés deste
   // app.get('/admin/users', ...) foi movido para src/routes/admin-users.ts
 
-  // Adicionar crédito (cash) a um usuário
-  app.post('/admin/users/:id/add-cash', async (req, reply) => {
-    const { id } = req.params as any;
-    const { amount } = req.body as any;
-
-    if (!amount || amount <= 0) {
-      return reply.code(400).send({ error: 'invalid_amount' });
-    }
-
-    await pool.query(`
-      UPDATE users 
-      SET cash = cash + $1 
-      WHERE id = $2
-    `, [amount, id]);
-
-    return { ok: true, message: `Adicionado R$ ${amount} ao usuário ${id}` };
-  });
-
-  // Banir usuário
-  app.post('/admin/users/:id/ban', async (req, reply) => {
-    const { id } = req.params as any;
-    const { reason = 'Violação dos termos de uso' } = req.body as any;
-
-    await pool.query(`
-      UPDATE users 
-      SET is_banned = true 
-      WHERE id = $1
-    `, [id]);
-
-    // TODO: Registrar log de auditoria
-    console.log(`Usuário ${id} banido. Motivo: ${reason}`);
-
-    return { ok: true, message: `Usuário ${id} banido com sucesso` };
-  });
-
-  // Desbanir usuário
-  app.post('/admin/users/:id/unban', async (req, reply) => {
-    const { id } = req.params as any;
-
-    await pool.query(`
-      UPDATE users 
-      SET is_banned = false 
-      WHERE id = $1
-    `, [id]);
-
-    return { ok: true, message: `Usuário ${id} desbanido com sucesso` };
-  });
+  // ENDPOINTS REMOVIDOS - Usar admin-users.ts ao invés deste
+  // As rotas /admin/users/:id/add-cash, /admin/users/:id/ban e /admin/users/:id/unban
+  // foram movidas para src/routes/admin-users.ts com autenticação adequada
 
   // ============================================
   // GESTÃO DE CONTEÚDO - CONCURSOS

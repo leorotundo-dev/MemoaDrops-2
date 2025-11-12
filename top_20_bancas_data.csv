@@ -1,0 +1,21 @@
+id,name,display_name,website,concursos_url,is_active,priority,tier,notes
+1,cebraspe,CEBRASPE,https://www.cebraspe.org.br,https://www.cebraspe.org.br/concursos,true,100,1,Já cadastrada - antiga Cespe/UnB
+2,fcc,FCC,https://www.concursosfcc.com.br,https://www.concursosfcc.com.br/concursos,true,95,1,Já cadastrada - Fundação Carlos Chagas
+3,fgv,FGV,https://conhecimento.fgv.br,https://conhecimento.fgv.br/concursos,true,90,1,Já cadastrada - Fundação Getúlio Vargas
+20,vunesp,VUNESP,https://www.vunesp.com.br,https://www.vunesp.com.br/busca/concurso/inscricoes%20abertas,true,85,1,Já cadastrada - URL corrigida
+5,cesgranrio,CESGRANRIO,https://www.cesgranrio.org.br,https://www.cesgranrio.org.br/concursos,true,80,1,Já cadastrada - Fundação Cesgranrio
+24,quadrix,QUADRIX,https://www.quadrix.org.br,https://site.quadrix.org.br,true,75,2,Já cadastrada - Instituto Quadrix
+11,aocp,AOCP,https://www.institutoaocp.org.br,https://www.institutoaocp.org.br/concursos,true,70,2,Já cadastrada
+21,ibfc,IBFC,https://www.ibfc.org.br,https://www.ibfc.org.br/concursos-abertos,true,65,2,Já cadastrada
+,idecan,IDECAN,https://idecan.org.br,https://idecan.org.br,false,60,2,Nova - Instituto de Desenvolvimento Educacional
+,iades,IADES,https://www.iades.com.br,https://www.iades.com.br/inscricao/?v=andamento,false,55,2,Nova - Instituto Americano de Desenvolvimento
+,fundatec,FUNDATEC,https://www.fundatec.org.br,https://www.fundatec.org.br/portal/concursos/concursos_abertos.php,false,50,2,Nova - Principal banca do RS
+,ibade,IBADE,https://www.ibade.org.br,https://www.ibade.org.br,false,45,2,Nova - Instituto Brasileiro de Apoio
+,consulplan,CONSULPLAN,https://www.institutoconsulplan.org.br,https://www.institutoconsulplan.org.br,false,40,2,Nova - Instituto Consulplan
+,objetiva,OBJETIVA,https://www.objetivas.com.br,https://www.objetivas.com.br,false,35,2,Nova - Objetiva Concursos
+,fadesp,FADESP,https://www.fadesp.org.br,https://www.fadesp.org.br,false,30,2,Nova - Fundação de Amparo (Norte)
+,cetro,CETRO,https://www.cetroconcursos.org.br,https://www.cetroconcursos.org.br,false,25,3,Nova - Centro de Estudos
+,funcern,FUNCERN,https://www.funcern.br,https://www.funcern.br,false,20,3,Nova - Fundação de Apoio RN
+,copeve_ufal,COPEVE/UFAL,https://www.copeve.ufal.br,https://www.copeve.ufal.br,false,15,3,Nova - Comissão Permanente UFAL
+,fepese,FEPESE,https://www.fepese.org.br,https://www.fepese.org.br,false,10,3,Nova - Fundação de Estudos SC
+,fumarc,FUMARC,https://www.fumarc.org.br,https://www.fumarc.org.br,false,5,3,Nova - Fundação Mariana Resende (MG)

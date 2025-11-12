@@ -60,7 +60,7 @@ export async function scrapeBancaContestsWithPuppeteer(
 
     // Seletores específicos por banca
     const bancaSelectors: Record<string, string> = {
-      'cebraspe': 'a[href*="/concursos/"], button:has-text("MAIS INFORMAÇÕES"), .card a',
+      'cebraspe': 'a',  // Vamos filtrar por texto no evaluate
       'cesgranrio': 'a[href*="concurso"], .concurso a, a[href*="edital"]',
       'ibfc': 'a[href*="concurso"], .card a, a[href*="edital"]',
       'aocp': 'a[href*="concurso"], .concurso-item a, a[href*="edital"]',
@@ -70,7 +70,7 @@ export async function scrapeBancaContestsWithPuppeteer(
     const selector = bancaSelectors[bancaName.toLowerCase()] || 'a[href*="concurso"]';
 
     // Extrair links de concursos
-    const contests = await page.evaluate((sel, baseUrl, bancaId) => {
+    const contests = await page.evaluate((sel, baseUrl, bancaId, bancaName) => {
       const links = Array.from(document.querySelectorAll(sel));
       const results: DiscoveredContest[] = [];
 
@@ -78,7 +78,14 @@ export async function scrapeBancaContestsWithPuppeteer(
         const href = (link as HTMLAnchorElement).href;
         const text = link.textContent?.trim() || '';
 
-        if (href && text && text.length > 10) {
+        // Para CEBRASPE, filtrar apenas links "MAIS INFORMAÇÕES"
+        if (bancaName.toLowerCase() === 'cebraspe') {
+          if (text !== 'MAIS INFORMAÇÕES') {
+            continue;
+          }
+        }
+
+        if (href && text && text.length > 3) {
           // Construir URL completa
           let fullUrl = href;
           if (!href.startsWith('http')) {
@@ -106,7 +113,7 @@ export async function scrapeBancaContestsWithPuppeteer(
       }
 
       return results;
-    }, selector, contestUrl, bancaId);
+    }, selector, contestUrl, bancaId, bancaName);
 
     console.log(`[Puppeteer Scraper] Encontrados ${contests.length} concursos para ${bancaName}`);
     

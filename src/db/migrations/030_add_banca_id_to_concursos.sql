@@ -28,17 +28,8 @@ END $$;
 -- Criar índice para melhor performance
 CREATE INDEX IF NOT EXISTS idx_concursos_banca_id ON concursos(banca_id);
 
--- Tentar mapear concursos existentes para bancas
--- Atualiza banca_id baseado no campo banca (texto)
-UPDATE concursos c
-SET banca_id = b.id
-FROM bancas b
-WHERE c.banca_id IS NULL
-  AND (
-    LOWER(c.banca) = LOWER(b.name) OR
-    LOWER(c.banca) = LOWER(b.display_name) OR
-    LOWER(c.banca) = LOWER(b.short_name)
-  );
+-- Nota: A tabela concursos original não tem campo 'banca'
+-- Os concursos deverão ser associados às bancas manualmente ou via script
 
 -- Comentários
 COMMENT ON COLUMN concursos.banca_id IS 'ID da banca organizadora (foreign key para tabela bancas)';

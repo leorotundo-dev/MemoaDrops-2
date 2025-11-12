@@ -577,3 +577,267 @@ export async function adminRoutes(app: FastifyInstance) {
     return { tables: rows.map(r => r.table_name) };
   });
 }
+
+  // ============================================
+  // BANCAS ORGANIZADORAS
+  // ============================================
+  
+  // Listar bancas
+  app.get('/admin/bancas', async (request) => {
+    const { search, area, status, sort } = request.query as any;
+    
+    let query = 'SELECT * FROM bancas WHERE 1=1';
+    const params: any[] = [];
+    let paramCount = 1;
+    
+    if (search) {
+      query += ` AND (name ILIKE $${paramCount} OR full_name ILIKE $${paramCount})`;
+      params.push(`%${search}%`);
+      paramCount++;
+    }
+    
+    if (area && area !== 'all') {
+      query += ` AND area = $${paramCount}`;
+      params.push(area);
+      paramCount++;
+    }
+    
+    if (status === 'active') {
+      query += ` AND is_active = true`;
+    } else if (status === 'inactive') {
+      query += ` AND is_active = false`;
+    }
+    
+    // Ordenação
+    if (sort === 'name') {
+      query += ' ORDER BY name ASC';
+    } else if (sort === 'contests') {
+      query += ' ORDER BY total_contests DESC';
+    } else {
+      query += ' ORDER BY created_at DESC';
+    }
+    
+    const { rows } = await pool.query(query, params);
+    return rows;
+  });
+  
+  // Criar banca
+  app.post('/admin/bancas', async (request, reply) => {
+    const { name, full_name, acronym, area, description, website, is_active } = request.body as any;
+    
+    try {
+      const { rows: [banca] } = await pool.query(`
+        INSERT INTO bancas (name, full_name, acronym, area, description, website, is_active, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+        RETURNING *
+      `, [name, full_name, acronym, area, description, website, is_active !== false]);
+      
+      return reply.status(201).send(banca);
+    } catch (error: any) {
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+  
+  // Obter banca por ID
+  app.get('/admin/bancas/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    
+    const { rows } = await pool.query('SELECT * FROM bancas WHERE id = $1', [id]);
+    
+    if (rows.length === 0) {
+      return reply.status(404).send({ error: 'Banca não encontrada' });
+    }
+    
+    return rows[0];
+  });
+  
+  // Atualizar banca
+  app.put('/admin/bancas/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { name, full_name, acronym, area, description, website, is_active } = request.body as any;
+    
+    try {
+      const { rows: [banca] } = await pool.query(`
+        UPDATE bancas 
+        SET name = $1, full_name = $2, acronym = $3, area = $4, description = $5, 
+            website = $6, is_active = $7, updated_at = NOW()
+        WHERE id = $8
+        RETURNING *
+      `, [name, full_name, acronym, area, description, website, is_active, id]);
+      
+      if (!banca) {
+        return reply.status(404).send({ error: 'Banca não encontrada' });
+      }
+      
+      return banca;
+    } catch (error: any) {
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+  
+  // Deletar banca
+  app.delete('/admin/bancas/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    
+    const { rowCount } = await pool.query('DELETE FROM bancas WHERE id = $1', [id]);
+    
+    if (rowCount === 0) {
+      return reply.status(404).send({ error: 'Banca não encontrada' });
+    }
+    
+    return { message: 'Banca deletada com sucesso' };
+  });
+  
+  // Estatísticas de bancas
+  app.get('/admin/bancas/stats', async () => {
+    const { rows: [stats] } = await pool.query(`
+      SELECT 
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE is_active = true)::int AS active,
+        COALESCE(SUM(total_contests), 0)::int AS total_contests
+      FROM bancas
+    `);
+    
+    return stats || { total: 0, active: 0, total_contests: 0 };
+  });
+  
+  // ============================================
+  // SCRAPERS
+  // ============================================
+  
+  // Listar scrapers
+  app.get('/admin/scrapers', async (request) => {
+    const { search, category, status } = request.query as any;
+    
+    let query = 'SELECT * FROM scrapers WHERE 1=1';
+    const params: any[] = [];
+    let paramCount = 1;
+    
+    if (search) {
+      query += ` AND (name ILIKE $${paramCount} OR url ILIKE $${paramCount})`;
+      params.push(`%${search}%`);
+      paramCount++;
+    }
+    
+    if (category && category !== 'all') {
+      query += ` AND category = $${paramCount}`;
+      params.push(category);
+      paramCount++;
+    }
+    
+    if (status === 'active') {
+      query += ` AND is_active = true`;
+    } else if (status === 'inactive') {
+      query += ` AND is_active = false`;
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    const { rows } = await pool.query(query, params);
+    return rows;
+  });
+  
+  // Criar scraper
+  app.post('/admin/scrapers', async (request, reply) => {
+    const { name, url, category, banca_id, selectors, config, is_active } = request.body as any;
+    
+    try {
+      const { rows: [scraper] } = await pool.query(`
+        INSERT INTO scrapers (name, url, category, banca_id, selectors, config, is_active, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+        RETURNING *
+      `, [name, url, category, banca_id, selectors, config, is_active !== false]);
+      
+      return reply.status(201).send(scraper);
+    } catch (error: any) {
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+  
+  // Obter scraper por ID
+  app.get('/admin/scrapers/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    
+    const { rows } = await pool.query('SELECT * FROM scrapers WHERE id = $1', [id]);
+    
+    if (rows.length === 0) {
+      return reply.status(404).send({ error: 'Scraper não encontrado' });
+    }
+    
+    return rows[0];
+  });
+  
+  // Atualizar scraper
+  app.put('/admin/scrapers/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { name, url, category, banca_id, selectors, config, is_active } = request.body as any;
+    
+    try {
+      const { rows: [scraper] } = await pool.query(`
+        UPDATE scrapers 
+        SET name = $1, url = $2, category = $3, banca_id = $4, selectors = $5, 
+            config = $6, is_active = $7, updated_at = NOW()
+        WHERE id = $8
+        RETURNING *
+      `, [name, url, category, banca_id, selectors, config, is_active, id]);
+      
+      if (!scraper) {
+        return reply.status(404).send({ error: 'Scraper não encontrado' });
+      }
+      
+      return scraper;
+    } catch (error: any) {
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+  
+  // Deletar scraper
+  app.delete('/admin/scrapers/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    
+    const { rowCount } = await pool.query('DELETE FROM scrapers WHERE id = $1', [id]);
+    
+    if (rowCount === 0) {
+      return reply.status(404).send({ error: 'Scraper não encontrado' });
+    }
+    
+    return { message: 'Scraper deletado com sucesso' };
+  });
+  
+  // Testar scraper
+  app.post('/admin/scrapers/:id/test', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    
+    // TODO: Implementar lógica de teste do scraper
+    return { message: 'Teste de scraper não implementado ainda', scraper_id: id };
+  });
+  
+  // Ver logs do scraper
+  app.get('/admin/scrapers/:id/logs', async (request) => {
+    const { id } = request.params as { id: string };
+    const { limit = 50 } = request.query as any;
+    
+    const { rows } = await pool.query(`
+      SELECT * FROM scraper_logs 
+      WHERE scraper_id = $1 
+      ORDER BY created_at DESC 
+      LIMIT $2
+    `, [id, limit]);
+    
+    return rows;
+  });
+  
+  // Estatísticas de scrapers
+  app.get('/admin/scrapers/stats', async () => {
+    const { rows: [stats] } = await pool.query(`
+      SELECT 
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE is_active = true)::int AS active,
+        COUNT(*) FILTER (WHERE last_error IS NOT NULL)::int AS with_error,
+        COALESCE(AVG(CASE WHEN last_run_success THEN 100 ELSE 0 END), 0)::int AS success_rate
+      FROM scrapers
+    `);
+    
+    return stats || { total: 0, active: 0, with_error: 0, success_rate: 0 };
+  });
+}

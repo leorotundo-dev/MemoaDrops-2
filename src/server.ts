@@ -49,6 +49,7 @@ import { adminCostsRoutes } from './routes/admin.costs.js';
 import { registerAdminUserRoutes } from './routes/admin-users.js';
 import { registerAdminScraperRoutes } from './routes/admin.scrapers.js';
 import { registerAdminBancaRoutes } from './routes/admin.bancas.js';
+import logosRoutes from './routes/logos.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -98,6 +99,7 @@ await app.register(devicesRoutes);
 await app.register(importMultipartRoutes);
 await app.register(notificationPrefsRoutes);
 await app.register(adminCostsRoutes);
+await app.register(logosRoutes);
 
 // ============================================
 // LEGACY ROUTES (concursos/scraping)

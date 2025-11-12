@@ -62,20 +62,12 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
         [name, display_name, short_name || null, website_url || null, logo_url || null, description || null, JSON.stringify(areas || []), scraper_id || null]);
       
-      // Se não forneceu logo_url, tentar buscar automaticamente
-      if (!logo_url && display_name && banca.id) {
+      // Buscar e salvar logo automaticamente no banco de dados
+      if (display_name && banca.id) {
         try {
-          const { fetchAndSaveLogo } = await import('../services/logo-fetcher.js');
-          const fetchedLogo = await fetchAndSaveLogo(display_name, banca.id, website_url);
-          if (fetchedLogo) {
-            // Atualizar a banca com o logo encontrado
-            const { rows: [updatedBanca] } = await pool.query(
-              'UPDATE bancas SET logo_url = $1 WHERE id = $2 RETURNING *',
-              [fetchedLogo, banca.id]
-            );
-            console.log(`Logo encontrado automaticamente para ${display_name}: ${fetchedLogo}`);
-            return updatedBanca;
-          }
+          const { fetchAndSaveBancaLogo } = await import('../services/logo-fetcher.js');
+          await fetchAndSaveBancaLogo(banca.id, display_name, website_url);
+          console.log(`Logo buscado automaticamente para ${display_name}`);
         } catch (err) {
           console.error(`Erro ao buscar logo automaticamente para ${display_name}:`, err);
           // Continuar sem logo

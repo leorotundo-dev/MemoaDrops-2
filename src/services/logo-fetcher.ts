@@ -1,244 +1,258 @@
 import axios from 'axios';
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { pipeline } from 'stream/promises';
-import { createWriteStream } from 'fs';
+import { pool } from '../db/connection.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Mapeamento de URLs conhecidas para logos de bancas brasileiras
+const knownLogos: Record<string, string> = {
+  'fgv': 'https://portal.fgv.br/sites/portal.fgv.br/files/logo-fgv-portal.png',
+  'cesgranrio': 'https://www.cesgranrio.org.br/img/institucional/logo-cesgranrio.png',
+  'cespe': 'https://www.cespe.unb.br/img/logo-cespe.png',
+  'cebraspe': 'https://www.cespe.unb.br/img/logo-cespe.png',
+  'vunesp': 'https://www.vunesp.com.br/img/logo-vunesp.png',
+  'fcc': 'https://www.fcc.org.br/img/logo-fcc.png',
+  'ibfc': 'https://www.ibfc.org.br/img/logo-ibfc.png',
+  'aocp': 'https://www.aocp.com.br/img/logo-aocp.png',
+  'quadrix': 'https://www.quadrix.org.br/img/logo-quadrix.png',
+  'idecan': 'https://www.idecan.org.br/img/logo-idecan.png',
+  'consulplan': 'https://www.consulplan.net/img/logo-consulplan.png',
+  'ibam': 'https://www.ibam.org.br/img/logo-ibam.png',
+  'fundatec': 'https://www.fundatec.org.br/img/logo-fundatec.png',
+  'iades': 'https://www.iades.com.br/img/logo-iades.png',
+  'fadesp': 'https://www.fadesp.org.br/img/logo-fadesp.png',
+  'cetro': 'https://www.cetroconcursos.org.br/img/logo-cetro.png',
+  'fumarc': 'https://www.fumarc.org.br/img/logo-fumarc.png',
+  'funcab': 'https://www.funcab.org/img/logo-funcab.png',
+};
 
-const LOGOS_DIR = path.join(__dirname, '../../public/logos/bancas');
+// Tentativas de URLs comuns para logos
+const commonLogoPaths = [
+  '/logo.png',
+  '/img/logo.png',
+  '/images/logo.png',
+  '/assets/logo.png',
+  '/static/logo.png',
+  '/img/institucional/logo.png',
+  '/img/logo-principal.png',
+];
 
 /**
- * Sanitiza o nome da banca para criar um nome de arquivo válido
+ * Sanitiza o nome da banca para busca
  */
-function sanitizeFilename(name: string): string {
+function sanitizeName(name: string): string {
   return name
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[^a-z0-9]/g, '-') // Substitui caracteres especiais por hífen
-    .replace(/-+/g, '-') // Remove hífens duplicados
-    .replace(/^-|-$/g, ''); // Remove hífens no início e fim
+    .replace(/[^a-z0-9]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 /**
- * Busca logo da banca usando múltiplas estratégias
+ * Busca a URL do logo de uma banca
  */
-async function searchLogoUrl(bancaName: string, bancaWebsite?: string): Promise<string | null> {
-  try {
-    // Mapeamento de logos conhecidas de bancas brasileiras
-    const knownLogos: Record<string, string> = {
-      'fgv': 'https://portal.fgv.br/sites/portal.fgv.br/files/logo-fgv-portal.png',
-      'cesgranrio': 'https://www.cesgranrio.org.br/img/institucional/logo-cesgranrio.png',
-      'cespe': 'https://cdn.cebraspe.org.br/img/logo-cebraspe.png',
-      'cebraspe': 'https://cdn.cebraspe.org.br/img/logo-cebraspe.png',
-      'fcc': 'https://www.fcc.org.br/img/logo-fcc.png',
-      'vunesp': 'https://www.vunesp.com.br/img/logo-vunesp.png',
-      'ibfc': 'https://www.ibfc.org.br/img/logo-ibfc.png',
-      'fundatec': 'https://www.fundatec.org.br/img/logo-fundatec.png',
-      'aocp': 'https://www.aocp.com.br/img/logo-aocp.png',
-      'quadrix': 'https://www.quadrix.org.br/img/logo-quadrix.png',
-      'idecan': 'https://www.idecan.org.br/img/logo-idecan.png',
-      'iades': 'https://www.iades.com.br/img/logo-iades.png',
-      'consulplan': 'https://www.consulplan.net/img/logo-consulplan.png',
-      'fadesp': 'https://www.fadesp.org.br/img/logo-fadesp.png',
-      'ibam': 'https://www.ibam.org.br/img/logo-ibam.png',
-      'cetro': 'https://www.cetroconcursos.org.br/img/logo-cetro.png',
-      'fumarc': 'https://www.fumarc.org.br/img/logo-fumarc.png',
-      'funcab': 'https://www.funcab.org/img/logo-funcab.png',
-      'instituto': 'https://ui-avatars.com/api/?name=Instituto&size=200&background=0D47A1&color=fff&bold=true',
-    };
-
-    const sanitizedName = sanitizeFilename(bancaName);
-    
-    // Procura por correspondência exata ou parcial
-    for (const [key, url] of Object.entries(knownLogos)) {
-      if (sanitizedName.includes(key) || key.includes(sanitizedName)) {
-        console.log(`Logo conhecida encontrada para ${bancaName}: ${url}`);
-        return url;
-      }
+async function findLogoUrl(bancaName: string, websiteUrl?: string): Promise<string | null> {
+  const normalizedName = sanitizeName(bancaName);
+  
+  // 1. Verificar se temos uma URL conhecida
+  for (const [key, url] of Object.entries(knownLogos)) {
+    if (normalizedName.includes(key) || key.includes(normalizedName)) {
+      console.log(`[Logo Fetcher] URL conhecida encontrada para ${bancaName}: ${url}`);
+      return url;
     }
-
-    // Se tiver website, tentar buscar logo no site oficial
-    if (bancaWebsite) {
-      const commonLogoPaths = [
-        '/logo.png',
-        '/img/logo.png',
-        '/img/logo-principal.png',
-        '/images/logo.png',
-        '/assets/logo.png',
-        '/static/logo.png',
-        '/img/institucional/logo.png',
-      ];
+  }
+  
+  // 2. Se temos website, tentar URLs comuns
+  if (websiteUrl) {
+    try {
+      const baseUrl = new URL(websiteUrl);
       
-      for (const logoPath of commonLogoPaths) {
+      for (const path of commonLogoPaths) {
+        const logoUrl = `${baseUrl.origin}${path}`;
         try {
-          const logoUrl = new URL(logoPath, bancaWebsite).toString();
-          console.log(`Tentando buscar logo em: ${logoUrl}`);
+          const response = await axios.head(logoUrl, {
+            timeout: 5000,
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+          });
           
-          // Testa se a URL existe
-          const response = await axios.head(logoUrl, { timeout: 5000 });
-          if (response.status === 200) {
-            console.log(`Logo encontrada no site oficial: ${logoUrl}`);
+          if (response.status === 200 && response.headers['content-type']?.startsWith('image/')) {
+            console.log(`[Logo Fetcher] Logo encontrado no site oficial: ${logoUrl}`);
             return logoUrl;
           }
-        } catch {
-          // Continua para próxima tentativa
+        } catch (error) {
+          // Continuar tentando outras URLs
         }
       }
+    } catch (error) {
+      console.error(`[Logo Fetcher] Erro ao processar website URL: ${error}`);
     }
-
-    // Fallback: gera uma imagem com as iniciais usando UI Avatars
-    console.log(`Usando fallback (UI Avatars) para ${bancaName}`);
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(bancaName)}&size=200&background=0D47A1&color=fff&bold=true`;
-  } catch (error) {
-    console.error(`Erro ao buscar logo para ${bancaName}:`, error);
-    return null;
   }
+  
+  console.log(`[Logo Fetcher] Nenhum logo encontrado para ${bancaName}, usando fallback`);
+  return null;
 }
 
 /**
- * Baixa uma imagem da URL e salva localmente
+ * Gera URL de fallback usando UI Avatars
  */
-async function downloadImage(imageUrl: string, savePath: string): Promise<boolean> {
+function generateFallbackLogoUrl(bancaName: string): string {
+  const initials = bancaName
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 3);
+  
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&size=200&background=0D47A1&color=fff&bold=true`;
+}
+
+/**
+ * Baixa uma imagem e retorna os dados binários e o MIME type
+ */
+async function downloadImage(url: string): Promise<{ data: Buffer; mimeType: string } | null> {
   try {
-    console.log(`Baixando imagem de: ${imageUrl}`);
+    console.log(`[Logo Fetcher] Baixando imagem de: ${url}`);
     
-    const response = await axios({
-      method: 'GET',
-      url: imageUrl,
-      responseType: 'stream',
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
       timeout: 10000,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
     });
-
-    // Garante que o diretório existe
-    await fs.mkdir(LOGOS_DIR, { recursive: true });
-
-    // Salva o arquivo usando stream
-    const writer = createWriteStream(savePath);
-    await pipeline(response.data, writer);
-
-    console.log(`Logo salva com sucesso em: ${savePath}`);
-    return true;
+    
+    const mimeType = response.headers['content-type'] || 'image/png';
+    const data = Buffer.from(response.data);
+    
+    console.log(`[Logo Fetcher] Imagem baixada com sucesso: ${data.length} bytes, tipo: ${mimeType}`);
+    
+    return { data, mimeType };
   } catch (error) {
-    console.error(`Erro ao baixar imagem de ${imageUrl}:`, error);
-    return false;
+    console.error(`[Logo Fetcher] Erro ao baixar imagem de ${url}:`, error);
+    return null;
   }
 }
 
 /**
- * Busca e baixa a logo de uma banca
- * @param bancaName Nome da banca
- * @param bancaId ID da banca (usado para nome do arquivo)
- * @param bancaWebsite Website da banca (opcional)
- * @returns Caminho relativo da logo salva ou null se falhar
+ * Busca e salva o logo de uma banca no banco de dados
  */
-export async function fetchAndSaveLogo(
-  bancaName: string, 
-  bancaId: number,
-  bancaWebsite?: string
-): Promise<string | null> {
+export async function fetchAndSaveBancaLogo(
+  bancaId: string,
+  bancaName: string,
+  websiteUrl?: string
+): Promise<boolean> {
   try {
-    console.log(`Buscando logo para: ${bancaName} (ID: ${bancaId})`);
-
-    // Define o nome do arquivo
-    const sanitizedName = sanitizeFilename(bancaName);
-    const filename = `${sanitizedName}-${bancaId}.png`;
-    const absolutePath = path.join(LOGOS_DIR, filename);
-
-    // Verifica se a logo já existe
-    try {
-      await fs.access(absolutePath);
-      console.log(`Logo já existe para ${bancaName}: ${filename}`);
-      return `/logos/bancas/${filename}`;
-    } catch {
-      // Arquivo não existe, continuar com o download
-    }
-
-    // Busca a URL da logo
-    const logoUrl = await searchLogoUrl(bancaName, bancaWebsite);
+    console.log(`[Logo Fetcher] Buscando logo para banca: ${bancaName} (ID: ${bancaId})`);
+    
+    // 1. Buscar URL do logo
+    let logoUrl = await findLogoUrl(bancaName, websiteUrl);
+    
+    // 2. Se não encontrou, usar fallback
     if (!logoUrl) {
-      console.log(`Não foi possível encontrar logo para: ${bancaName}`);
-      return null;
+      logoUrl = generateFallbackLogoUrl(bancaName);
+      console.log(`[Logo Fetcher] Usando fallback: ${logoUrl}`);
     }
-
-    console.log(`URL da logo encontrada: ${logoUrl}`);
-
-    // Baixa e salva a imagem
-    const success = await downloadImage(logoUrl, absolutePath);
-    if (!success) {
-      console.log(`Falha ao baixar logo para: ${bancaName}`);
-      return null;
-    }
-
-    // Retorna o caminho relativo para armazenar no banco
-    const relativePath = `/logos/bancas/${filename}`;
-    console.log(`Logo salva com sucesso: ${relativePath}`);
     
-    return relativePath;
-  } catch (error) {
-    console.error(`Erro ao processar logo para ${bancaName}:`, error);
-    return null;
-  }
-}
-
-/**
- * Atualiza logo de uma banca existente
- */
-export async function updateBancaLogo(
-  bancaId: number, 
-  bancaName: string, 
-  bancaWebsite?: string
-): Promise<string | null> {
-  try {
-    // Remove a logo antiga se existir
-    const sanitizedName = sanitizeFilename(bancaName);
-    const filename = `${sanitizedName}-${bancaId}.png`;
-    const absolutePath = path.join(LOGOS_DIR, filename);
+    // 3. Baixar a imagem
+    const imageData = await downloadImage(logoUrl);
     
-    try {
-      await fs.unlink(absolutePath);
-      console.log(`Logo antiga removida: ${filename}`);
-    } catch {
-      // Logo não existia, continuar
+    if (!imageData) {
+      console.error(`[Logo Fetcher] Falha ao baixar logo para ${bancaName}`);
+      return false;
     }
-
-    // Busca e salva nova logo
-    return await fetchAndSaveLogo(bancaName, bancaId, bancaWebsite);
-  } catch (error) {
-    console.error(`Erro ao atualizar logo para ${bancaName}:`, error);
-    return null;
-  }
-}
-
-/**
- * Remove uma logo do sistema de arquivos
- */
-export async function deleteLogo(logoPath: string): Promise<boolean> {
-  try {
-    if (!logoPath || logoPath === '') {
-      return true;
-    }
-
-    // Remove a barra inicial se existir
-    const cleanPath = logoPath.startsWith('/') ? logoPath.substring(1) : logoPath;
-    const absolutePath = path.join(__dirname, '../../public', cleanPath);
-
-    try {
-      await fs.unlink(absolutePath);
-      console.log(`Logo removida: ${absolutePath}`);
-    } catch {
-      // Logo não existia
-    }
-
+    
+    // 4. Salvar no banco de dados
+    await pool.query(
+      `UPDATE bancas 
+       SET logo_data = $1, logo_mime_type = $2, updated_at = NOW()
+       WHERE id = $3`,
+      [imageData.data, imageData.mimeType, bancaId]
+    );
+    
+    console.log(`[Logo Fetcher] ✅ Logo salvo no banco de dados para ${bancaName}`);
     return true;
+    
   } catch (error) {
-    console.error(`Erro ao remover logo ${logoPath}:`, error);
+    console.error(`[Logo Fetcher] Erro ao processar logo para ${bancaName}:`, error);
     return false;
+  }
+}
+
+/**
+ * Atualiza o logo de uma banca existente
+ */
+export async function updateBancaLogo(bancaId: string): Promise<boolean> {
+  try {
+    // Buscar informações da banca
+    const { rows } = await pool.query(
+      'SELECT name, display_name, website_url FROM bancas WHERE id = $1',
+      [bancaId]
+    );
+    
+    if (!rows || rows.length === 0) {
+      console.error(`[Logo Fetcher] Banca não encontrada: ${bancaId}`);
+      return false;
+    }
+    
+    const banca = rows[0];
+    
+    return await fetchAndSaveBancaLogo(
+      bancaId,
+      banca.display_name || banca.name,
+      banca.website_url
+    );
+    
+  } catch (error) {
+    console.error(`[Logo Fetcher] Erro ao atualizar logo:`, error);
+    return false;
+  }
+}
+
+/**
+ * Remove o logo de uma banca
+ */
+export async function deleteBancaLogo(bancaId: string): Promise<boolean> {
+  try {
+    await pool.query(
+      `UPDATE bancas 
+       SET logo_data = NULL, logo_mime_type = NULL, updated_at = NOW()
+       WHERE id = $1`,
+      [bancaId]
+    );
+    
+    console.log(`[Logo Fetcher] Logo removido para banca ${bancaId}`);
+    return true;
+    
+  } catch (error) {
+    console.error(`[Logo Fetcher] Erro ao remover logo:`, error);
+    return false;
+  }
+}
+
+/**
+ * Busca o logo de uma banca do banco de dados
+ */
+export async function getBancaLogo(bancaId: string): Promise<{ data: Buffer; mimeType: string } | null> {
+  try {
+    const { rows } = await pool.query(
+      'SELECT logo_data, logo_mime_type FROM bancas WHERE id = $1 AND logo_data IS NOT NULL',
+      [bancaId]
+    );
+    
+    if (!rows || rows.length === 0) {
+      return null;
+    }
+    
+    const row = rows[0];
+    
+    return {
+      data: row.logo_data,
+      mimeType: row.logo_mime_type || 'image/png'
+    };
+    
+  } catch (error) {
+    console.error(`[Logo Fetcher] Erro ao buscar logo:`, error);
+    return null;
   }
 }

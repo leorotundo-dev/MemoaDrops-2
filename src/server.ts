@@ -3,7 +3,7 @@ import Fastify from 'fastify';
 // CORS is now registered in security plugin
 import { pool } from './db/connection.js';
 
-import { searchConcursosMock } from './services/scraper.js';
+// import { searchConcursosMock } from './services/scraper.js'; // Removido - não existe mais
 import { semanticSearch } from './services/vectorSearch.js';
 import { makeRateLimit } from './plugins/rateLimit.js';
 import { errorHandlerPlugin } from './errors/errorHandler.js';
@@ -93,8 +93,8 @@ await app.register(adminCostsRoutes);
 app.get('/concursos/search', { preHandler: [rateLimit] }, async (req, reply) => {
   const parsed = SearchQuerySchema.safeParse(req.query);
   if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
-  const items = await searchConcursosMock(parsed.data.q);
-  return items;
+  // const items = await searchConcursosMock(parsed.data.q); // Removido - função não existe mais
+  return { message: 'Endpoint descontinuado' };
 });
 
 app.post('/concursos/sync', { preHandler: [rateLimit] }, async (req, reply) => {

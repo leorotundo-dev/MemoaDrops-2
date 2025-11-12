@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 import { pool } from '../db/connection.js';
 
-export default async function bancasRoutes(app: FastifyInstance) {
+export async function registerAdminBancaRoutes(app: FastifyInstance) {
   // Listar bancas
   app.get('/admin/bancas', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
     try {

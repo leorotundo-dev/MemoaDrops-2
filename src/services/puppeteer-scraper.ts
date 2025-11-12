@@ -60,6 +60,7 @@ export async function scrapeBancaContestsWithPuppeteer(
 
     // Seletores específicos por banca
     const bancaSelectors: Record<string, string> = {
+      'cebraspe': 'a[href*="/concursos/"], button:has-text("MAIS INFORMAÇÕES"), .card a',
       'cesgranrio': 'a[href*="concurso"], .concurso a, a[href*="edital"]',
       'ibfc': 'a[href*="concurso"], .card a, a[href*="edital"]',
       'aocp': 'a[href*="concurso"], .concurso-item a, a[href*="edital"]',

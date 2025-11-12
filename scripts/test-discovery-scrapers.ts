@@ -10,9 +10,9 @@ const BANCA_CONTEST_URLS: Record<string, string> = {
   'cebraspe': 'https://www.cebraspe.org.br/concursos',
   'fcc': 'https://www.concursosfcc.com.br/concursos',
   'fgv': 'https://conhecimento.fgv.br/concursos',
-  'vunesp': 'https://www.vunesp.com.br/VUNESP/concursos.html',
+  'vunesp': 'https://www.vunesp.com.br/busca/concurso/inscricoes%20abertas',
   'cesgranrio': 'https://www.cesgranrio.org.br/concursos/',
-  'quadrix': 'https://www.quadrix.org.br/concursos.aspx',
+  'quadrix': 'https://site.quadrix.org.br/',
   'ibfc': 'https://www.ibfc.org.br/concursos-abertos',
   'aocp': 'https://www.institutoaocp.org.br/concursos',
 };

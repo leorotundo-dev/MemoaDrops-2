@@ -52,7 +52,7 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
     }
 
     // Bancas que requerem Puppeteer (bloqueiam HTTP normal ou usam JavaScript dinâmico)
-    const puppeteerBancas = ['cesgranrio', 'ibfc', 'aocp', 'vunesp'];
+    const puppeteerBancas = ['cesgranrio', 'ibfc', 'aocp', 'vunesp', 'cebraspe'];
     
     if (puppeteerBancas.includes(banca.name.toLowerCase())) {
       console.log(`[Contest Discovery] Usando Puppeteer para ${banca.name}`);
@@ -79,9 +79,10 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
         '.q_circle_text_holder a',
       ],
       'quadrix': [
-        'a[href*="/todos-os-concursos/inscricoes-abertas/"]',
-        'a[href*="/todos-os-concursos/"]',
-        '.exam-card a',
+        'a[href*="inscricoes-abertas"]',
+        '.card a',
+        'a:contains("VISUALIZAR")',
+        'a[href*="concurso"]',
       ],
       'vunesp': [
         'a[href*="concurso"]',

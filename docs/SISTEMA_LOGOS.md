@@ -278,3 +278,23 @@ Este sistema faz parte do projeto MemoDrops e segue a mesma licença do projeto 
 **Última atualização**: 12 de novembro de 2025
 **Versão**: 1.0.0
 **Autor**: Sistema MemoDrops
+
+
+## ✨ Melhorias Implementadas (v1.1.0)
+
+### 1. Cache de Logos Otimizado
+
+- **Cache-Control**: `public, max-age=2592000, immutable` (30 dias)
+- **ETag**: Suporte a `If-None-Match` para cache condicional (304 Not Modified)
+
+### 2. Endpoint de Atualização Manual
+
+- **POST `/logos/bancas/:id/refresh`**: Força a atualização do logo de uma banca.
+
+### 3. Busca de Logos Aprimorada
+
+- Adicionado mais caminhos comuns para busca de logos, incluindo SVGs e diretórios de temas WordPress.
+
+### 4. Botão de Atualização no Frontend
+
+- Adicionado botão "🔄 Atualizar Logo" no modal de detalhes da banca no Admin Dashboard.

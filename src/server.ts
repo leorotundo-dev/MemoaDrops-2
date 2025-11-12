@@ -49,6 +49,7 @@ import { adminCostsRoutes } from './routes/admin.costs.js';
 import { registerAdminUserRoutes } from './routes/admin-users.js';
 import { registerAdminScraperRoutes } from './routes/admin.scrapers.js';
 import { registerAdminBancaRoutes } from './routes/admin.bancas.js';
+import { registerBancaRoutes } from './routes/bancas.js';
 import registerAdminInsertBancasRoutes from './routes/admin.insert-bancas.js';
 import registerAdminDeleteDuplicatesRoutes from './routes/admin.delete-duplicates.js';
 import logosRoutes from './routes/logos.js';
@@ -109,6 +110,7 @@ await app.register(importMultipartRoutes);
 await app.register(notificationPrefsRoutes);
 await app.register(adminCostsRoutes);
 await app.register(logosRoutes);
+await app.register(registerBancaRoutes);
 
 // ============================================
 // LEGACY ROUTES (concursos/scraping)

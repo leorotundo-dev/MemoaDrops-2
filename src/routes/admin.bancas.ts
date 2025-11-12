@@ -113,9 +113,8 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
     try {
       const { id } = request.params as any;
       const { rows: [banca] } = await pool.query(`
-        SELECT b.*, s.display_name AS scraper_name, s.id AS scraper_id
+        SELECT b.*
         FROM bancas b
-        LEFT JOIN scrapers s ON b.scraper_id = s.id
         WHERE b.id=$1`, [id]);
       if (!banca) return reply.status(404).send({ error: 'Banca not found' });
       return banca;

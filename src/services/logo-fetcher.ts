@@ -26,12 +26,20 @@ const knownLogos: Record<string, string> = {
 // Tentativas de URLs comuns para logos
 const commonLogoPaths = [
   '/logo.png',
+  '/logo.svg',
   '/img/logo.png',
+  '/img/logo.svg',
   '/images/logo.png',
+  '/images/logo.svg',
   '/assets/logo.png',
+  '/assets/images/logo.png',
   '/static/logo.png',
+  '/static/images/logo.png',
   '/img/institucional/logo.png',
   '/img/logo-principal.png',
+  '/wp-content/uploads/logo.png',
+  '/wp-content/themes/*/logo.png',
+  '/media/logo.png',
 ];
 
 /**

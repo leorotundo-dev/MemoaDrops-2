@@ -20,8 +20,14 @@ export default async function logosRoutes(app: FastifyInstance) {
       reply.type(logo.mimeType);
       
       // Define cache headers para melhor performance
-      reply.header('Cache-Control', 'public, max-age=86400'); // 24 horas
-      reply.header('ETag', `"${id}"`);
+      reply.header('Cache-Control', 'public, max-age=2592000, immutable'); // 30 dias
+      reply.header('ETag', `"logo-${id}"`);
+      
+      // Suporte a If-None-Match para cache condicional
+      const ifNoneMatch = request.headers['if-none-match'];
+      if (ifNoneMatch === `"logo-${id}"`) {
+        return reply.code(304).send();
+      }
       
       // Retorna os dados binários da imagem
       return reply.send(logo.data);
@@ -59,6 +65,35 @@ export default async function logosRoutes(app: FastifyInstance) {
     } catch (error) {
       console.error(`[Logos Route] Erro ao buscar info do logo da banca ${id}:`, error);
       return reply.code(500).send({ error: 'Erro ao buscar informações do logo' });
+    }
+  });
+  
+  /**
+   * POST /logos/bancas/:id/refresh
+   * Força a atualização do logo de uma banca
+   */
+  app.post('/logos/bancas/:id/refresh', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    
+    try {
+      const { updateBancaLogo } = await import('../services/logo-fetcher.js');
+      const success = await updateBancaLogo(id);
+      
+      if (success) {
+        return reply.send({ 
+          success: true, 
+          message: 'Logo atualizado com sucesso' 
+        });
+      } else {
+        return reply.code(500).send({ 
+          success: false, 
+          error: 'Falha ao atualizar logo' 
+        });
+      }
+      
+    } catch (error) {
+      console.error(`[Logos Route] Erro ao atualizar logo da banca ${id}:`, error);
+      return reply.code(500).send({ error: 'Erro ao atualizar logo' });
     }
   });
 }

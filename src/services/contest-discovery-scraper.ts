@@ -24,6 +24,10 @@ const BANCA_CONTEST_URLS: Record<string, string> = {
   'quadrix': 'https://site.quadrix.org.br/',
   'ibfc': 'https://www.ibfc.org.br/concursos-abertos',
   'aocp': 'https://www.institutoaocp.org.br/concursos',
+  // Novas bancas
+  'iades': 'https://www.iades.com.br/inscricao/?v=andamento',
+  'fundatec': 'https://www.fundatec.org.br/portal/concursos/concursos_abertos.php',
+  'ibade': 'https://portal.ibade.selecao.site/edital',
 };
 
 /**
@@ -88,6 +92,19 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
         'a[href*="concurso"]',
         '.card a',
         'a[href*="vunesp.com.br"]',
+      ],
+      'iades': [
+        'a[href*="iades.com.br"]',
+        '.concurso a',
+        'a:contains("MAIS INFORMAÇÕES")',
+      ],
+      'fundatec': [
+        'a[href*="concurso"]',
+        'a[href*="edital"]',
+      ],
+      'ibade': [
+        'a[href*="Inscrições Abertas"]',
+        'a[href*="edital"]',
       ],
     };
 

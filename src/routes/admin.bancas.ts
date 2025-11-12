@@ -155,4 +155,56 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
       return reply.status(500).send({ error: e.message });
     }
   });
+
+  // Listar concursos de uma banca
+  app.get('/admin/bancas/:id/contests', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
+    try {
+      const { id } = request.params as any;
+      const { limit = 50, offset = 0 } = request.query as any;
+      
+      // Verificar se a banca existe
+      const { rows: [banca] } = await pool.query('SELECT id FROM bancas WHERE id=$1', [id]);
+      if (!banca) return reply.status(404).send({ error: 'Banca not found' });
+      
+      // Buscar concursos da banca
+      const { rows } = await pool.query(`
+        SELECT id, nome, dou_url, created_at
+        FROM concursos
+        WHERE banca_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
+      `, [id, limit, offset]);
+      
+      return rows;
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
+  // Estatísticas de concursos por ano para uma banca
+  app.get('/admin/bancas/:id/stats', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
+    try {
+      const { id } = request.params as any;
+      
+      // Verificar se a banca existe
+      const { rows: [banca] } = await pool.query('SELECT id FROM bancas WHERE id=$1', [id]);
+      if (!banca) return reply.status(404).send({ error: 'Banca not found' });
+      
+      // Buscar estatísticas por ano
+      const { rows } = await pool.query(`
+        SELECT 
+          EXTRACT(YEAR FROM created_at)::int AS year,
+          COUNT(*)::int AS total_contests
+        FROM concursos
+        WHERE banca_id = $1
+        GROUP BY EXTRACT(YEAR FROM created_at)
+        ORDER BY year DESC
+        LIMIT 10
+      `, [id]);
+      
+      return rows;
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
 }

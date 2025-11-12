@@ -1,34 +1,33 @@
-import { FastifyInstance } from 'fastify';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { pool } from '../db/connection.js';
+import { authenticate } from '../middleware/authenticate.js';
+import { requireAdmin } from '../middleware/authorize.js';
 
-export default async function bancasRoutes(app: FastifyInstance) {
-  // Listar bancas
+export async function registerAdminBancaRoutes(app: FastifyInstance) {
+  // Listar bancas com filtros e ordenação
   app.get('/admin/bancas', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
     try {
-      const { search, area, status, sort } = request.query as any;
-      let query = `SELECT b.* FROM bancas b WHERE 1=1`;
+      const { status, area, search, sort = 'name' } = request.query as any;
       const params: any[] = [];
-      let paramCount = 0;
+      let where = 'WHERE 1=1';
+      let i = 1;
 
-      if (search) {
-        paramCount++;
-        query += ` AND (b.name ILIKE $${paramCount} OR b.display_name ILIKE $${paramCount} OR b.full_name ILIKE $${paramCount})`;
-        params.push(`%${search}%`);
-      }
-      if (area && area !== 'all') {
-        paramCount++;
-        query += ` AND b.areas::jsonb @> $${paramCount}::jsonb`;
-        params.push(JSON.stringify([area]));
-      }
-      if (status === 'active') query += ` AND b.is_active = true`;
-      else if (status === 'inactive') query += ` AND b.is_active = false`;
+      if (status === 'active') where += ` AND is_active = true`;
+      else if (status === 'inactive') where += ` AND is_active = false`;
 
-      if (sort === 'name') query += ` ORDER BY b.name ASC`;
-      else if (sort === 'contests') query += ` ORDER BY b.total_contests DESC`;
-      else query += ` ORDER BY b.created_at DESC`;
+      if (area) { where += ` AND areas @> $${i}::jsonb`; params.push(JSON.stringify([area])); i++; }
+      if (search) { where += ` AND (name ILIKE $${i} OR display_name ILIKE $${i} OR short_name ILIKE $${i})`; params.push(`%${search}%`); i++; }
 
-      const { rows } = await pool.query(query, params);
+      let order = 'ORDER BY name ASC';
+      if (sort === 'contests') order = 'ORDER BY total_contests DESC';
+      else if (sort === 'recent') order = 'ORDER BY last_contest_date DESC NULLS LAST';
+
+      const sql = `
+        SELECT b.*
+        FROM bancas b
+        ${where}
+        ${order}`;
+      const { rows } = await pool.query(sql, params);
       return rows;
     } catch (e: any) {
       return reply.status(500).send({ error: e.message });
@@ -39,32 +38,12 @@ export default async function bancasRoutes(app: FastifyInstance) {
   app.post('/admin/bancas', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
     try {
       const { name, display_name, short_name, website_url, logo_url, description, areas, scraper_id } = request.body as any;
-      
-      // Verificar se já existe banca com o mesmo name ou short_name
-      const { rows: existing } = await pool.query(`
-        SELECT id, name, display_name FROM bancas 
-        WHERE name = $1 OR short_name = $2
-        LIMIT 1`,
-        [name, short_name]);
-      
-      if (existing.length > 0) {
-        return reply.status(409).send({ 
-          error: 'Banca já existe',
-          message: `Já existe uma banca cadastrada com este nome: "${existing[0].display_name}"`,
-          existing: existing[0]
-        });
-      }
-      
       const { rows: [banca] } = await pool.query(`
         INSERT INTO bancas (name, display_name, short_name, website_url, logo_url, description, areas, scraper_id)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
         [name, display_name, short_name || null, website_url || null, logo_url || null, description || null, JSON.stringify(areas || []), scraper_id || null]);
       return banca;
     } catch (e: any) {
-      // Tratar erro de constraint UNIQUE
-      if (e.code === '23505') { // Postgres unique violation
-        return reply.status(409).send({ error: 'Banca duplicada', message: 'Já existe uma banca com este nome ou sigla' });
-      }
       return reply.status(500).send({ error: e.message });
     }
   });
@@ -137,6 +116,54 @@ export default async function bancasRoutes(app: FastifyInstance) {
         ORDER BY total_contests DESC
         LIMIT 1`);
       return { ...stats, top_banca: top || null };
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
+  // Estatísticas por ano (últimos 10 registros)
+  app.get('/admin/bancas/:id/stats', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
+    try {
+      const { id } = request.params as any;
+      const { rows } = await pool.query(`
+        SELECT year, total_contests, total_candidates
+        FROM banca_stats WHERE banca_id=$1
+        ORDER BY year DESC
+        LIMIT 10`, [id]);
+      return rows;
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
+  // Concursos por banca (placeholder)
+  app.get('/admin/bancas/:id/contests', { preHandler: [authenticate, requireAdmin] }, async (_request, _reply) => {
+    try {
+      return [];
+    } catch (e: any) {
+      return [];
+    }
+  });
+
+  // Importação em massa via CSV parseado no frontend
+  app.post('/admin/bancas/import', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
+    try {
+      const { bancas } = (request.body || {}) as any;
+      const results = { success: 0, errors: [] as string[] };
+      if (!Array.isArray(bancas)) return reply.status(400).send({ error: 'bancas deve ser um array' });
+      for (const b of bancas) {
+        try {
+          await pool.query(`
+            INSERT INTO bancas (name, display_name, short_name, website_url, logo_url, description, areas)
+            VALUES ($1,$2,$3,$4,$5,$6,$7)
+            ON CONFLICT (name) DO NOTHING`,
+            [b.name, b.display_name, b.short_name || null, b.website_url || null, b.logo_url || null, b.description || null, JSON.stringify(b.areas || [])]);
+          results.success++;
+        } catch (e: any) {
+          results.errors.push(`${b.name}: ${e.message}`);
+        }
+      }
+      return results;
     } catch (e: any) {
       return reply.status(500).send({ error: e.message });
     }

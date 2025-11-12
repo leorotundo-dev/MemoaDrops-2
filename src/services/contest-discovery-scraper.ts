@@ -26,6 +26,15 @@ const BANCA_CONTEST_URLS: Record<string, string> = {
   'aocp': 'https://www.institutoaocp.org.br/concursos',
   // Novas bancas
   'iades': 'https://www.iades.com.br/inscricao/?v=andamento',
+  // Bancas fáceis - Lote 2
+  'objetiva': 'https://concursos.objetivas.com.br/index/abertos/',
+  'fadesp': 'https://portalfadesp.org.br/?page_id=33858',
+  'cetro': 'https://www.cetapnet.com.br/index/1/',
+  'funcern': 'https://funcern.br/concursos/',
+  'copeve_ufal': 'https://copeve.ufal.br/index.php?opcao=todosConcursos',
+  'fumarc': 'https://www.fumarc.com.br/concursos',
+  'instituto_mais': 'https://www.institutomais.org.br/Concursos/ConcursosAbertos',
+  'ufpr': 'https://servicos.nc.ufpr.br/PortalNC/ConcursosAndamento?ano=2025',
   'fundatec': 'https://www.fundatec.org.br/portal/concursos/concursos_abertos.php',
   'ibade': 'https://portal.ibade.selecao.site/edital',
 };
@@ -105,6 +114,38 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
       'ibade': [
         'a[href*="Inscrições Abertas"]',
         'a[href*="edital"]',
+      ],
+      'objetiva': [
+        'h3 a',
+        'a[href*="concurso"]',
+      ],
+      'fadesp': [
+        '.elementor-widget-container ul li a',
+        'a[href*="concurso"]',
+      ],
+      'cetro': [
+        '.concurso-item h3 a',
+        'a[href*="concurso"]',
+      ],
+      'funcern': [
+        'div.entry-content a',
+        'a[href*="concurso"]',
+      ],
+      'copeve_ufal': [
+        'table a',
+        'a[href*="concurso"]',
+      ],
+      'fumarc': [
+        'div.col-md-4 a',
+        'a[href*="Edital"]',
+      ],
+      'instituto_mais': [
+        'div.col-md-12 a',
+        'a[href*="concurso"]',
+      ],
+      'ufpr': [
+        'div.col-md-3 a',
+        'a[href*="concurso"]',
       ],
     };
 

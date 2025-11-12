@@ -1,0 +1,27 @@
+const BANCA_CONTEST_URLS: Record<string, string> = {
+  'cebraspe': 'https://www.cebraspe.org.br/concursos',
+  'fcc': 'https://www.concursosfcc.com.br/concursos',
+  'fgv': 'https://conhecimento.fgv.br/concursos',
+  'vunesp': 'https://www.vunesp.com.br/busca/concurso/inscricoes%20abertas',
+  'cesgranrio': 'https://www.cesgranrio.org.br/concursos/',
+  'quadrix': 'https://site.quadrix.org.br/',
+  'ibfc': 'https://www.ibfc.org.br/concursos-abertos',
+  'aocp': 'https://www.institutoaocp.org.br/concursos',
+  // Novas bancas - Lote 1
+  'iades': 'https://www.iades.com.br/inscricao/?v=andamento',
+  'fundatec': 'https://www.fundatec.org.br/portal/concursos/concursos_abertos.php',
+  'ibade': 'https://portal.ibade.selecao.site/edital',
+  // Bancas fáceis - Lote 2
+  'objetiva': 'https://concursos.objetivas.com.br/index/abertos/',
+  'fadesp': 'https://portalfadesp.org.br/?page_id=33858',
+  'cetro': 'https://www.cetapnet.com.br/index/1/',
+  'funcern': 'https://funcern.br/concursos/',
+  'copeve_ufal': 'https://copeve.ufal.br/index.php?opcao=todosConcursos',
+  'fumarc': 'https://www.fumarc.com.br/concursos',
+  'instituto_mais': 'https://www.institutomais.org.br/Concursos/ConcursosAbertos',
+  'ufpr': 'https://servicos.nc.ufpr.br/PortalNC/ConcursosAndamento?ano=2025',
+  // Bancas médias/difíceis
+  'fepese': 'https://fepese.org.br/concursos/',
+  'consulplan': 'https://www.institutoconsulplan.org.br/concursosNovo.aspx',
+  'ibam': 'https://www.ibamsp-concursos.org.br/index/abertos/',
+};

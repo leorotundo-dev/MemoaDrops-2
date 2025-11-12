@@ -54,6 +54,7 @@ import { migrateLogosRoutes } from './routes/migrate-logos.js';
 import { backfillLogosRoutes } from './routes/backfill-logos.js';
 import migrateConcursosRoutes from './routes/migrate-concursos.js';
 import scrapeContestsRoutes from './routes/scrape-contests.js';
+import fixContestBancaIds from './routes/fix-contest-banca-ids.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -165,6 +166,7 @@ await migrateLogosRoutes(app);
 await backfillLogosRoutes(app);
 await migrateConcursosRoutes(app);
 await scrapeContestsRoutes(app);
+await fixContestBancaIds(app);
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

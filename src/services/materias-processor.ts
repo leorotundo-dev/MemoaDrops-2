@@ -44,9 +44,9 @@ export async function processContestMaterias(
     console.log(`[Materias Processor] Baixando PDF do edital...`);
     pdfPath = await downloadPdf(editalUrl, contestId);
     
-    // 3. Extrair texto (primeiras 20 páginas para economizar tempo)
+    // 3. Extrair texto (primeiras 50 páginas para pegar anexos)
     console.log(`[Materias Processor] Extraindo texto do PDF...`);
-    const rawText = await extractTextFromPdfPages(pdfPath, 20);
+    const rawText = await extractTextFromPdfPages(pdfPath, 50);
     const cleanText = cleanPdfText(rawText);
     
     if (cleanText.length < 500) {

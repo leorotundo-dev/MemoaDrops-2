@@ -34,8 +34,10 @@ INSTRUÇÕES IMPORTANTES:
 4. Use nomes padronizados e completos das matérias
 5. Separe matérias diferentes mesmo que estejam agrupadas
 6. Aceite variações: "Conhecimentos de Português" = "Língua Portuguesa"
-7. Retorne em formato JSON com array "materias"
-8. Se não encontrar matérias, retorne array vazio
+7. **IGNORE COMPLETAMENTE:** links de navegação ("Início", "Fale Conosco", "Contato", "Sobre"), nomes de seções do site, menus, rodapés
+8. **IGNORE:** nomes de cargos, órgãos, cidades, datas, valores
+9. Retorne em formato JSON com array "materias"
+10. Se não encontrar matérias VÁLIDAS, retorne array vazio
 
 EXEMPLOS DE MATÉRIAS VÁLIDAS:
 - "Língua Portuguesa" (ou "Português", "Conhecimentos de Português")
@@ -90,11 +92,29 @@ Retorne APENAS um JSON válido no formato:
       throw new Error('Formato de resposta inválido');
     }
     
+    // Lista de termos inválidos (links de navegação, menus, etc)
+    const invalidTerms = [
+      'início', 'home', 'fale conosco', 'contato', 'sobre', 'quem somos',
+      'notícias', 'imprensa', 'links', 'downloads', 'documentos',
+      'edital', 'inscrição', 'inscrições', 'resultado', 'gabarito',
+      'acessibilidade', 'mapa do site', 'busca', 'pesquisa',
+      'voltar', 'próximo', 'anterior', 'menu', 'navegação'
+    ];
+    
     // Limpar e normalizar matérias
     const materias = result.materias
       .filter((m: any) => typeof m === 'string' && m.trim().length > 0)
       .map((m: string) => m.trim())
-      .filter((m: string) => m.length >= 3 && m.length <= 100) // Filtrar matérias muito curtas ou longas
+      .filter((m: string) => {
+        const lower = m.toLowerCase();
+        // Filtrar matérias muito curtas ou longas
+        if (m.length < 3 || m.length > 100) return false;
+        // Filtrar termos inválidos
+        if (invalidTerms.some(term => lower === term || lower.includes(term))) return false;
+        // Filtrar se começa com número (provavelmente é item de lista)
+        if (/^\d/.test(m)) return false;
+        return true;
+      })
       .slice(0, 50); // Limitar a 50 matérias
     
     console.log(`[Materias GPT Extractor] ${materias.length} matérias extraídas`);

@@ -48,7 +48,7 @@ export async function extractContestData(contestId: string, contestUrl: string, 
 
     // Usar extractor específico se disponível
     if (banca === 'copeve') {
-      const copeve Data = await extractCopeveConcursoData(contestUrl);
+      const copeveData = await extractCopeveConcursoData(contestUrl);
       extractedData = {
         salario: copeveData.salario,
         numero_vagas: copeveData.numero_vagas,

@@ -1,11 +1,5 @@
 import { FastifyInstance } from 'fastify';
 import { pool } from '../db/connection.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 export default async function adminMigration006Routes(fastify: FastifyInstance) {
   fastify.post('/admin/migration-006', async (request, reply) => {
@@ -14,8 +8,23 @@ export default async function adminMigration006Routes(fastify: FastifyInstance) 
     try {
       console.log('[Migration 006 API] Executando migration...');
       
-      const migrationPath = path.join(__dirname, '..', 'db', 'migrations', '006_fix_materias_table.sql');
-      const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
+      const migrationSQL = `
+        -- Migration 006: Fix materias table structure
+        DROP TABLE IF EXISTS materias CASCADE;
+        
+        CREATE TABLE IF NOT EXISTS materias (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          contest_id UUID NOT NULL REFERENCES concursos(id) ON DELETE CASCADE,
+          nome VARCHAR(255) NOT NULL,
+          slug VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(contest_id, slug)
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_materias_contest_id ON materias(contest_id);
+        CREATE INDEX IF NOT EXISTS idx_materias_slug ON materias(slug);
+      `;
       
       await client.query(migrationSQL);
       

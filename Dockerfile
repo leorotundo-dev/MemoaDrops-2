@@ -1,7 +1,7 @@
 # Use Node.js 22 base image
 FROM node:22-slim
 
-# Install Chrome dependencies for Puppeteer
+# Install Chrome dependencies for Puppeteer and poppler-utils for PDF processing
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -40,6 +40,7 @@ RUN apt-get update && apt-get install -y \
     libxtst6 \
     lsb-release \
     xdg-utils \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory

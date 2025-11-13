@@ -2,6 +2,7 @@ import { pool } from '../db/connection.js';
 import { downloadPdf, deletePdf } from './pdf-downloader.js';
 import { extractTextFromPdfPages, cleanPdfText } from './pdf-text-extractor.js';
 import { extractMateriasWithRetry } from './materias-gpt-extractor.js';
+import { findRelevantPages, extractTextFromRelevantPages } from './pdf-page-finder.js';
 
 interface ProcessMateriasResult {
   success: boolean;
@@ -44,9 +45,13 @@ export async function processContestMaterias(
     console.log(`[Materias Processor] Baixando PDF do edital...`);
     pdfPath = await downloadPdf(editalUrl, contestId);
     
-    // 3. Extrair texto (primeiras 50 páginas para pegar anexos)
-    console.log(`[Materias Processor] Extraindo texto do PDF...`);
-    const rawText = await extractTextFromPdfPages(pdfPath, 50);
+    // 3. Buscar páginas relevantes (com conteúdo programático)
+    console.log(`[Materias Processor] Buscando páginas relevantes no PDF...`);
+    const relevantPages = await findRelevantPages(pdfPath);
+    
+    // 4. Extrair texto das páginas relevantes
+    console.log(`[Materias Processor] Extraindo texto das páginas relevantes...`);
+    const rawText = await extractTextFromRelevantPages(pdfPath, relevantPages);
     const cleanText = cleanPdfText(rawText);
     
     if (cleanText.length < 500) {

@@ -238,10 +238,10 @@ export async function saveDiscoveredContests(contests: DiscoveredContest[]): Pro
 
   for (const contest of contests) {
     try {
-      // Verificar se já existe
+      // Verificar se já existe (por nome e banca)
       const { rows: existing } = await pool.query(
-        'SELECT id FROM concursos WHERE dou_url = $1',
-        [contest.dou_url]
+        'SELECT id FROM concursos WHERE name = $1 AND banca_id = $2',
+        [contest.nome, contest.banca_id]
       );
 
       if (existing.length > 0) {
@@ -249,10 +249,16 @@ export async function saveDiscoveredContests(contests: DiscoveredContest[]): Pro
         continue;
       }
 
-      // Inserir novo concurso
+      // Inserir novo concurso com schema novo
+      // Gerar slug a partir do nome
+      const slug = contest.nome.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[^a-z0-9]+/g, '-') // Substitui caracteres especiais por hífen
+        .replace(/^-+|-+$/g, ''); // Remove hífens do início e fim
+      
       await pool.query(
-        'INSERT INTO concursos (nome, dou_url, banca_id) VALUES ($1, $2, $3)',
-        [contest.nome, contest.dou_url, contest.banca_id]
+        'INSERT INTO concursos (name, slug, banca_id, created_at) VALUES ($1, $2, $3, NOW())',
+        [contest.nome, slug, contest.banca_id]
       );
 
       savedCount++;

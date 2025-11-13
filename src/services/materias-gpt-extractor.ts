@@ -25,24 +25,26 @@ export async function extractMateriasWithGPT(editalText: string, contestName: st
     
     const prompt = `Você é um especialista em análise de editais de concursos públicos brasileiros.
 
-Analise o texto do edital abaixo e extraia TODAS as matérias/disciplinas que serão cobradas na prova.
+Analise o texto do edital abaixo e extraia TODAS as matérias/disciplinas/conhecimentos que serão cobrados na prova.
 
 INSTRUÇÕES IMPORTANTES:
-1. Liste APENAS as matérias/disciplinas (ex: "Língua Portuguesa", "Matemática", "Direito Constitucional")
-2. NÃO inclua tópicos específicos ou conteúdos programáticos
-3. Use nomes padronizados e completos das matérias
-4. Separe matérias diferentes mesmo que estejam agrupadas
-5. Retorne em formato JSON com array "materias"
-6. Se não encontrar matérias, retorne array vazio
+1. Procure por seções com títulos como: "CONTEÚDO PROGRAMÁTICO", "MATÉRIAS", "DISCIPLINAS", "CONHECIMENTOS", "ÁREAS DE CONHECIMENTO", "ANEXO"
+2. Liste APENAS as matérias/disciplinas principais (ex: "Língua Portuguesa", "Matemática", "Direito Constitucional")
+3. NÃO inclua tópicos específicos, sub-itens ou conteúdos detalhados
+4. Use nomes padronizados e completos das matérias
+5. Separe matérias diferentes mesmo que estejam agrupadas
+6. Aceite variações: "Conhecimentos de Português" = "Língua Portuguesa"
+7. Retorne em formato JSON com array "materias"
+8. Se não encontrar matérias, retorne array vazio
 
 EXEMPLOS DE MATÉRIAS VÁLIDAS:
-- "Língua Portuguesa"
-- "Matemática"
+- "Língua Portuguesa" (ou "Português", "Conhecimentos de Português")
+- "Matemática" (ou "Raciocínio Lógico-Matemático")
 - "Raciocínio Lógico"
 - "Direito Constitucional"
 - "Direito Administrativo"
-- "Informática"
-- "Conhecimentos Gerais"
+- "Informática" (ou "Noções de Informática")
+- "Conhecimentos Gerais" (ou "Atualidades")
 
 CONCURSO: ${contestName}
 

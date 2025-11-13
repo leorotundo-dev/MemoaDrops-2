@@ -251,7 +251,7 @@ export async function adminRoutes(app: FastifyInstance) {
       ORDER BY name ASC
     `);
 
-    return { contests };
+    return { data: contests };
   });
 
   // Criar concurso

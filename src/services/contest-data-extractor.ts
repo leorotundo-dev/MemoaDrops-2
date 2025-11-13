@@ -4,7 +4,7 @@ import { pool } from '../db/connection.js';
 import { extractCopeveConcursoData } from './extractors/copeve-extractor.js';
 import { extractFuncernConcursoData } from './extractors/funcern-extractor.js';
 import { extractFgvConcursoData } from './extractors/fgv-extractor.js';
-import { processContestMaterias } from './materias-processor.js';
+import { processHierarquiaForContest } from './hierarquia-processor.js';
 
 /**
  * Interface para dados extraídos de um concurso
@@ -329,12 +329,13 @@ export async function processContest(contestId: string): Promise<boolean> {
 
     // Processar matérias se tiver URL de edital
     if (extractedData.edital_url) {
-      console.log(`[Contest Extractor] Processando matérias...`);
+      console.log(`[Contest Extractor] Processando hierarquia completa (matérias/tópicos/subtópicos)...`);
       try {
-        await processContestMaterias(contestId, extractedData.edital_url, rows[0].name || 'Concurso');
+        const result = await processHierarquiaForContest(contestId, extractedData.edital_url);
+        console.log(`[Contest Extractor] Hierarquia processada:`, result);
       } catch (error: any) {
-        console.error(`[Contest Extractor] Erro ao processar matérias:`, error.message);
-        // Não falhar o processamento se matérias falharem
+        console.error(`[Contest Extractor] Erro ao processar hierarquia:`, error.message);
+        // Não falhar o processamento se hierarquia falhar
       }
     }
 

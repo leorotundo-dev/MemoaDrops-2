@@ -1,6 +1,6 @@
 import { pool } from '../db/connection.js';
-import { downloadPDF } from './pdf-downloader.js';
-import { extractTextFromPDF } from './pdf-text-extractor.js';
+import { downloadPdf } from './pdf-downloader.js';
+import { extractTextFromPdf } from './pdf-text-extractor.js';
 import { findRelevantPages } from './pdf-page-finder.js';
 import { extractHierarquiaFromText, generateSlug } from './hierarquia-gpt-extractor.js';
 
@@ -32,7 +32,7 @@ export async function processHierarquiaForContest(
     
     // 1. Baixar PDF
     console.log('[Hierarquia Processor] Baixando PDF...');
-    const pdfPath = await downloadPDF(editalUrl, contestId);
+    const pdfPath = await downloadPdf(editalUrl, contestId);
     
     // 2. Buscar páginas relevantes
     console.log('[Hierarquia Processor] Buscando páginas relevantes...');
@@ -40,7 +40,7 @@ export async function processHierarquiaForContest(
     
     // 3. Extrair texto das páginas relevantes
     console.log('[Hierarquia Processor] Extraindo texto...');
-    const pdfText = await extractTextFromPDF(pdfPath, relevantPages);
+    const pdfText = await extractTextFromPdf(pdfPath, relevantPages);
     
     if (!pdfText || pdfText.length < 100) {
       console.log('[Hierarquia Processor] Texto extraído muito curto ou vazio');

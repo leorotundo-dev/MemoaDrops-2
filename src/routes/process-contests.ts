@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { processContest } from '../services/contest-data-extractor.js';
-import pool from '../db/pool.js';
+import { pool } from '../db/connection.js';
 
 export default async function (app: FastifyInstance) {
   /**

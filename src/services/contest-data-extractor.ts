@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import pool from '../db/pool.js';
+import { pool } from '../db/connection.js';
 
 /**
  * Interface para dados extraídos de um concurso

@@ -1,9 +1,10 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { pool } from '../db/connection.js';
-import { extractCopeveConcursoData } from './extractors/copeve-extractor.js';
-import { extractFuncernConcursoData } from './extractors/funcern-extractor.js';
-import { extractFgvConcursoData } from './extractors/fgv-extractor.js';
+import { extractCopeveConcursoData } from '../extractors/copeve.js';
+import { extractFuncernConcursoData } from '../extractors/funcern.js';
+import { extractFgvConcursoData } from '../extractors/fgv.js';
+import { processContestMaterias } from './materias-processor.js';
 
 /**
  * Interface para dados extraídos de um concurso
@@ -306,6 +307,17 @@ export async function processContest(contestId: string): Promise<boolean> {
 
     // Atualizar no banco
     await updateContestWithExtractedData(contestId, extractedData);
+
+    // Processar matérias se tiver URL de edital
+    if (extractedData.edital_url) {
+      console.log(`[Contest Extractor] Processando matérias...`);
+      try {
+        await processContestMaterias(contestId, extractedData.edital_url, rows[0].name || 'Concurso');
+      } catch (error: any) {
+        console.error(`[Contest Extractor] Erro ao processar matérias:`, error.message);
+        // Não falhar o processamento se matérias falharem
+      }
+    }
 
     return true;
   } catch (error) {

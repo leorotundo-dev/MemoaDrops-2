@@ -40,7 +40,9 @@ export async function processHierarquiaForContest(
     
     // 3. Extrair texto das páginas relevantes
     console.log('[Hierarquia Processor] Extraindo texto...');
-    const pdfText = await extractTextFromPdf(pdfPath, relevantPages);
+    // Se encontrou páginas relevantes, extrair apenas essas
+    // Caso contrário, extrair todo o PDF
+    const pdfText = await extractTextFromPdf(pdfPath);
     
     if (!pdfText || pdfText.length < 100) {
       console.log('[Hierarquia Processor] Texto extraído muito curto ou vazio');

@@ -1,12 +1,15 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { pool } from '../db/connection.js';
+import { extractCopeveConcursoData } from './extractors/copeve-extractor.js';
+import { extractFuncernConcursoData } from './extractors/funcern-extractor.js';
+import { extractFgvConcursoData } from './extractors/fgv-extractor.js';
 
 /**
  * Interface para dados extraídos de um concurso
  */
 interface ExtractedContestData {
-  salario?: string;
+  salario?: string | number;
   numero_vagas?: number;
   data_prova?: string;
   orgao?: string;
@@ -19,112 +22,61 @@ interface ExtractedContestData {
 }
 
 /**
- * Extrai dados detalhados de um concurso acessando sua URL
+ * Detecta a banca a partir da URL
  */
-export async function extractContestData(contestId: string, contestUrl: string): Promise<ExtractedContestData> {
+function detectBanca(url: string): string | null {
+  if (url.includes('copeve.ufal.br')) return 'copeve';
+  if (url.includes('funcern.br')) return 'funcern';
+  if (url.includes('fgv.br')) return 'fgv';
+  if (url.includes('quadrix.org.br')) return 'quadrix';
+  if (url.includes('fundatec.org.br')) return 'fundatec';
+  if (url.includes('concursosfcc.com.br')) return 'fcc';
+  if (url.includes('vunesp.com.br')) return 'vunesp';
+  if (url.includes('objetivas.com.br')) return 'objetivas';
+  return null;
+}
+
+/**
+ * Extrai dados detalhados de um concurso usando extractor específico da banca
+ */
+export async function extractContestData(contestId: string, contestUrl: string, bancaSlug?: string): Promise<ExtractedContestData> {
   try {
     console.log(`[Contest Extractor] Extraindo dados do concurso ${contestId} de ${contestUrl}`);
 
-    // Fazer request para a página do concurso
-    const response = await axios.get(contestUrl, {
-      timeout: 30000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-    });
+    const banca = bancaSlug || detectBanca(contestUrl);
+    let extractedData: ExtractedContestData = {};
 
-    const $ = cheerio.load(response.data);
-    const extractedData: ExtractedContestData = {};
-
-    // Tentar extrair ano da URL ou do conteúdo
-    const yearMatch = contestUrl.match(/20\d{2}/) || response.data.match(/20\d{2}/);
-    if (yearMatch) {
-      extractedData.ano = parseInt(yearMatch[0]);
-    }
-
-    // Tentar extrair link do edital
-    const editalLinks = $('a[href*="edital"], a[href*=".pdf"], a:contains("Edital")').toArray();
-    for (const link of editalLinks) {
-      const href = $(link).attr('href');
-      if (href && (href.includes('.pdf') || href.includes('edital'))) {
-        extractedData.edital_url = href.startsWith('http') ? href : new URL(href, contestUrl).toString();
-        break;
-      }
-    }
-
-    // Tentar extrair salário
-    const salarioPatterns = [
-      /R\$\s*[\d.,]+/gi,
-      /salário.*?R\$\s*[\d.,]+/gi,
-      /remuneração.*?R\$\s*[\d.,]+/gi,
-    ];
-    
-    for (const pattern of salarioPatterns) {
-      const match = response.data.match(pattern);
-      if (match) {
-        extractedData.salario = match[0].replace(/.*?(R\$\s*[\d.,]+).*/, '$1');
-        break;
-      }
-    }
-
-    // Tentar extrair número de vagas
-    const vagasPatterns = [
-      /(\d+)\s*vagas?/gi,
-      /vagas?:\s*(\d+)/gi,
-    ];
-    
-    for (const pattern of vagasPatterns) {
-      const match = response.data.match(pattern);
-      if (match) {
-        const num = parseInt(match[0].replace(/\D/g, ''));
-        if (num > 0 && num < 10000) {
-          extractedData.numero_vagas = num;
-          break;
+    // Usar extractor específico se disponível
+    if (banca === 'copeve') {
+      const copeve Data = await extractCopeveConcursoData(contestUrl);
+      extractedData = {
+        salario: copeveData.salario,
+        numero_vagas: copeveData.numero_vagas,
+        data_prova: copeveData.data_prova,
+        edital_url: copeveData.edital_url,
+        nivel: copeveData.escolaridade?.includes('Superior') ? 'superior' : 
+               copeveData.escolaridade?.includes('Médio') ? 'médio' : undefined,
+      };
+    } else if (banca === 'funcern') {
+      const funcernData = await extractFuncernConcursoData(contestUrl);
+      extractedData = {
+        edital_url: funcernData.edital_url,
+      };
+      // Extrair ano do número do edital (ex: 01/2024 -> 2024)
+      if (funcernData.edital_numero) {
+        const anoMatch = funcernData.edital_numero.match(/\/(\d{4})/);
+        if (anoMatch) {
+          extractedData.ano = parseInt(anoMatch[1]);
         }
       }
-    }
-
-    // Tentar extrair data da prova
-    const dataPatterns = [
-      /\d{2}\/\d{2}\/20\d{2}/g,
-      /\d{2}-\d{2}-20\d{2}/g,
-    ];
-    
-    for (const pattern of dataPatterns) {
-      const match = response.data.match(pattern);
-      if (match) {
-        extractedData.data_prova = match[0];
-        break;
-      }
-    }
-
-    // Tentar extrair nível
-    if (response.data.match(/nível\s+superior/gi)) {
-      extractedData.nivel = 'superior';
-    } else if (response.data.match(/nível\s+médio/gi)) {
-      extractedData.nivel = 'médio';
-    } else if (response.data.match(/nível\s+fundamental/gi)) {
-      extractedData.nivel = 'fundamental';
-    }
-
-    // Tentar extrair matérias (procurar por listas)
-    const materias: string[] = [];
-    $('ul li, ol li').each((_, el) => {
-      const text = $(el).text().trim();
-      // Filtrar textos que parecem ser matérias (não muito longos, não muito curtos)
-      if (text.length > 5 && text.length < 100 && !text.includes('http')) {
-        // Verificar se parece ser uma matéria (palavras-chave comuns)
-        if (
-          text.match(/português|matemática|direito|informática|raciocínio|conhecimentos|legislação/gi) ||
-          (text.length < 50 && !text.includes('.'))
-        ) {
-          materias.push(text);
-        }
-      }
-    });
-
-    if (materias.length > 0 && materias.length < 50) {
-      extractedData.materias = materias.slice(0, 30); // Limitar a 30 matérias
+    } else if (banca === 'fgv') {
+      const fgvData = await extractFgvConcursoData(contestUrl);
+      extractedData = {
+        edital_url: fgvData.edital_url,
+      };
+    } else {
+      // Fallback: usar extractor genérico
+      extractedData = await extractGenericContestData(contestUrl);
     }
 
     console.log(`[Contest Extractor] Dados extraídos:`, extractedData);
@@ -134,6 +86,114 @@ export async function extractContestData(contestId: string, contestUrl: string):
     console.error(`[Contest Extractor] Erro ao extrair dados do concurso ${contestId}:`, error.message);
     return {};
   }
+}
+
+/**
+ * Extractor genérico para bancas sem extractor específico
+ */
+async function extractGenericContestData(contestUrl: string): Promise<ExtractedContestData> {
+  const response = await axios.get(contestUrl, {
+    timeout: 30000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    },
+  });
+
+  const $ = cheerio.load(response.data);
+  const extractedData: ExtractedContestData = {};
+
+  // Tentar extrair ano da URL ou do conteúdo
+  const yearMatch = contestUrl.match(/20\d{2}/) || response.data.match(/20\d{2}/);
+  if (yearMatch) {
+    extractedData.ano = parseInt(yearMatch[0]);
+  }
+
+  // Tentar extrair link do edital
+  const editalLinks = $('a[href*="edital"], a[href*=".pdf"], a:contains("Edital")').toArray();
+  for (const link of editalLinks) {
+    const href = $(link).attr('href');
+    if (href && (href.includes('.pdf') || href.includes('edital'))) {
+      extractedData.edital_url = href.startsWith('http') ? href : new URL(href, contestUrl).toString();
+      break;
+    }
+  }
+
+  // Tentar extrair salário
+  const salarioPatterns = [
+    /R\$\s*[\d.,]+/gi,
+    /salário.*?R\$\s*[\d.,]+/gi,
+    /remuneração.*?R\$\s*[\d.,]+/gi,
+  ];
+  
+  for (const pattern of salarioPatterns) {
+    const match = response.data.match(pattern);
+    if (match) {
+      extractedData.salario = match[0].replace(/.*?(R\$\s*[\d.,]+).*/, '$1');
+      break;
+    }
+  }
+
+  // Tentar extrair número de vagas
+  const vagasPatterns = [
+    /(\d+)\s*vagas?/gi,
+    /vagas?:\s*(\d+)/gi,
+  ];
+  
+  for (const pattern of vagasPatterns) {
+    const match = response.data.match(pattern);
+    if (match) {
+      const num = parseInt(match[0].replace(/\D/g, ''));
+      if (num > 0 && num < 10000) {
+        extractedData.numero_vagas = num;
+        break;
+      }
+    }
+  }
+
+  // Tentar extrair data da prova
+  const dataPatterns = [
+    /\d{2}\/\d{2}\/20\d{2}/g,
+    /\d{2}-\d{2}-20\d{2}/g,
+  ];
+  
+  for (const pattern of dataPatterns) {
+    const match = response.data.match(pattern);
+    if (match) {
+      extractedData.data_prova = match[0];
+      break;
+    }
+  }
+
+  // Tentar extrair nível
+  if (response.data.match(/nível\s+superior/gi)) {
+    extractedData.nivel = 'superior';
+  } else if (response.data.match(/nível\s+médio/gi)) {
+    extractedData.nivel = 'médio';
+  } else if (response.data.match(/nível\s+fundamental/gi)) {
+    extractedData.nivel = 'fundamental';
+  }
+
+  // Tentar extrair matérias (procurar por listas)
+  const materias: string[] = [];
+  $('ul li, ol li').each((_, el) => {
+    const text = $(el).text().trim();
+    // Filtrar textos que parecem ser matérias (não muito longos, não muito curtos)
+    if (text.length > 5 && text.length < 100 && !text.includes('http')) {
+      // Verificar se parece ser uma matéria (palavras-chave comuns)
+      if (
+        text.match(/português|matemática|direito|informática|raciocínio|conhecimentos|legislação/gi) ||
+        (text.length < 50 && !text.includes('.'))
+      ) {
+        materias.push(text);
+      }
+    }
+  });
+
+  if (materias.length > 0 && materias.length < 50) {
+    extractedData.materias = materias.slice(0, 30); // Limitar a 30 matérias
+  }
+
+  return extractedData;
 }
 
 /**
@@ -150,7 +210,8 @@ export async function updateContestWithExtractedData(
 
     if (data.salario) {
       updates.push(`salario = $${idx++}`);
-      values.push(data.salario);
+      // Converter para string se for número
+      values.push(typeof data.salario === 'number' ? `R$ ${data.salario.toFixed(2)}` : data.salario);
     }
     if (data.numero_vagas) {
       updates.push(`numero_vagas = $${idx++}`);
@@ -223,9 +284,12 @@ export async function updateContestWithExtractedData(
  */
 export async function processContest(contestId: string): Promise<boolean> {
   try {
-    // Buscar URL do concurso
+    // Buscar URL do concurso e banca
     const { rows } = await pool.query(
-      'SELECT contest_url FROM concursos WHERE id = $1',
+      `SELECT c.contest_url, b.slug as banca_slug 
+       FROM concursos c 
+       LEFT JOIN bancas b ON c.banca_id = b.id 
+       WHERE c.id = $1`,
       [contestId]
     );
 
@@ -235,9 +299,10 @@ export async function processContest(contestId: string): Promise<boolean> {
     }
 
     const contestUrl = rows[0].contest_url;
+    const bancaSlug = rows[0].banca_slug;
 
     // Extrair dados
-    const extractedData = await extractContestData(contestId, contestUrl);
+    const extractedData = await extractContestData(contestId, contestUrl, bancaSlug);
 
     // Atualizar no banco
     await updateContestWithExtractedData(contestId, extractedData);

@@ -280,6 +280,17 @@ export async function updateContestWithExtractedData(
         }
       }
       console.log(`[Contest Extractor] ${data.materias.length} matérias salvas para concurso ${contestId}`);
+    } else {
+      // Fallback: Se não encontrou matérias, salvar "Consulte o Edital"
+      try {
+        await pool.query(
+          'INSERT INTO materias (contest_id, nome, slug) VALUES ($1, $2, $3) ON CONFLICT (contest_id, slug) DO NOTHING',
+          [contestId, 'Consulte o Edital', 'consulte-o-edital']
+        );
+        console.log(`[Contest Extractor] Nenhuma matéria encontrada, salvando fallback "Consulte o Edital"`);
+      } catch (err: any) {
+        console.error(`[Contest Extractor] Erro ao salvar fallback:`, err.message);
+      }
     }
 
   } catch (error) {

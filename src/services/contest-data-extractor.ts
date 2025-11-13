@@ -263,12 +263,20 @@ export async function updateContestWithExtractedData(
     if (data.materias && data.materias.length > 0) {
       for (const materia of data.materias) {
         try {
+          // Criar slug a partir do nome da matéria
+          const slug = materia
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+            .replace(/[^a-z0-9]+/g, '-') // Substitui caracteres especiais por hífen
+            .replace(/^-+|-+$/g, ''); // Remove hífens do início e fim
+          
           await pool.query(
-            'INSERT INTO materias (contest_id, name) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-            [contestId, materia]
+            'INSERT INTO materias (contest_id, nome, slug) VALUES ($1, $2, $3) ON CONFLICT (contest_id, slug) DO NOTHING',
+            [contestId, materia, slug]
           );
-        } catch (err) {
-          console.error(`[Contest Extractor] Erro ao salvar matéria "${materia}":`, err);
+        } catch (err: any) {
+          console.error(`[Contest Extractor] Erro ao salvar matéria "${materia}":`, err.message);
         }
       }
       console.log(`[Contest Extractor] ${data.materias.length} matérias salvas para concurso ${contestId}`);

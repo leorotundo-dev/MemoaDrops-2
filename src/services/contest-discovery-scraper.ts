@@ -9,6 +9,7 @@ import { scrapeBancaContestsWithPuppeteer } from './puppeteer-scraper.js';
 interface DiscoveredContest {
   nome: string;
   dou_url: string;
+  contest_url?: string;
   banca_id: number;
 }
 
@@ -192,6 +193,7 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
             contests.push({
               nome: text.substring(0, 255), // Limitar tamanho
               dou_url: fullUrl,
+              contest_url: fullUrl, // URL do concurso
               banca_id: bancaId,
             });
           }
@@ -257,8 +259,8 @@ export async function saveDiscoveredContests(contests: DiscoveredContest[]): Pro
         .replace(/^-+|-+$/g, ''); // Remove hífens do início e fim
       
       await pool.query(
-        'INSERT INTO concursos (name, slug, banca_id, created_at) VALUES ($1, $2, $3, NOW())',
-        [contest.nome, slug, contest.banca_id]
+        'INSERT INTO concursos (name, slug, banca_id, contest_url, created_at) VALUES ($1, $2, $3, $4, NOW())',
+        [contest.nome, slug, contest.banca_id, contest.contest_url || contest.dou_url]
       );
 
       savedCount++;

@@ -13,7 +13,8 @@ interface PageRange {
  * Busca páginas que contêm palavras-chave relacionadas a conteúdo programático
  */
 export async function findRelevantPages(pdfPath: string): Promise<PageRange[]> {
-  const keywords = [
+  // Palavras-chave de seções de conteúdo programático
+  const sectionKeywords = [
     'CONTEÚDO PROGRAMÁTICO',
     'CONTEUDO PROGRAMATICO',
     'ANEXO',
@@ -25,6 +26,22 @@ export async function findRelevantPages(pdfPath: string): Promise<PageRange[]> {
     'ÁREAS DE CONHECIMENTO',
     'AREAS DE CONHECIMENTO'
   ];
+  
+  // Disciplinas comuns como "isca" para detectar conteúdo programático
+  const disciplineKeywords = [
+    'LÍNGUA PORTUGUESA',
+    'PORTUGUÊS',
+    'MATEMÁTICA',
+    'RACIOCÍNIO LÓGICO',
+    'DIREITO CONSTITUCIONAL',
+    'DIREITO ADMINISTRATIVO',
+    'DIREITO PENAL',
+    'INFORMÁTICA',
+    'CONHECIMENTOS GERAIS',
+    'ATUALIDADES'
+  ];
+  
+  const keywords = [...sectionKeywords, ...disciplineKeywords];
 
   const ranges: PageRange[] = [];
 

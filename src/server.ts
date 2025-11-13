@@ -60,6 +60,7 @@ import scrapeContestsRoutes from './routes/scrape-contests.js';
 import fixContestBancaIds from './routes/fix-contest-banca-ids.js';
 import clearContests from './routes/clear-contests.js';
 import debugContests from './routes/debug-contests.js';
+import processContestsRoutes from './routes/process-contests.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -177,6 +178,7 @@ await scrapeContestsRoutes(app);
 await fixContestBancaIds(app);
 await clearContests(app);
 await debugContests(app);
+await processContestsRoutes(app);
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

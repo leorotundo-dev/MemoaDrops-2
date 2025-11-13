@@ -67,7 +67,7 @@ export async function registerBancaRoutes(app: FastifyInstance) {
       
       // Buscar concursos da banca
       let query = `
-        SELECT id, name, slug, banca, ano, nivel, data_prova, salario, numero_vagas, created_at
+        SELECT id, nome as name, slug, banca, ano, nivel, data_prova, salario, numero_vagas, created_at
         FROM concursos
         WHERE banca_id = $1
       `;

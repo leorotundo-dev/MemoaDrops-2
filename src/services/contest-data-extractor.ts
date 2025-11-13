@@ -286,7 +286,7 @@ export async function processContest(contestId: string): Promise<boolean> {
   try {
     // Buscar URL do concurso e banca
     const { rows } = await pool.query(
-      `SELECT c.contest_url, b.slug as banca_slug 
+      `SELECT c.contest_url, b.name as banca_slug 
        FROM concursos c 
        LEFT JOIN bancas b ON c.banca_id = b.id 
        WHERE c.id = $1`,

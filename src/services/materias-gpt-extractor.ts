@@ -79,6 +79,7 @@ Retorne APENAS um JSON válido no formato:
     }
     
     console.log(`[Materias GPT Extractor] Resposta recebida do GPT-4`);
+    console.log(`[Materias GPT Extractor] Resposta completa:`, content);
     
     // Parse JSON
     const result = JSON.parse(content);

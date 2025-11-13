@@ -64,6 +64,7 @@ import processContestsRoutes from './routes/process-contests.js';
 import adminMigrationRoutes from './routes/admin-migration.js';
 import adminMigration006Routes from './routes/admin-migration-006.js';
 import adminMigration007Routes from './routes/admin-migration-007.js';
+import hierarquiaRoutes from './routes/hierarquia.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -185,6 +186,7 @@ await processContestsRoutes(app);
 await adminMigrationRoutes(app);
 await adminMigration006Routes(app);
 await adminMigration007Routes(app);
+await app.register(hierarquiaRoutes);
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

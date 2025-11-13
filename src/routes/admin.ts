@@ -246,9 +246,24 @@ export async function adminRoutes(app: FastifyInstance) {
   // Listar concursos
   app.get('/admin/contests', async (req, reply) => {
     const { rows: contests } = await pool.query(`
-      SELECT id, name, slug, banca, ano, nivel, data_prova, salario, numero_vagas, orgao, cidade, estado, edital_url, created_at
-      FROM concursos
-      ORDER BY name ASC
+      SELECT 
+        c.id, 
+        c.name, 
+        c.slug, 
+        COALESCE(b.display_name, b.name) as banca,
+        c.ano, 
+        c.nivel, 
+        c.data_prova, 
+        c.salario, 
+        c.numero_vagas, 
+        c.orgao, 
+        c.cidade, 
+        c.estado, 
+        c.edital_url, 
+        c.created_at
+      FROM concursos c
+      LEFT JOIN bancas b ON c.banca_id = b.id
+      ORDER BY c.name ASC
     `);
 
     return { data: contests };
@@ -259,10 +274,26 @@ export async function adminRoutes(app: FastifyInstance) {
     const { id } = req.params as any;
 
     const { rows: [contest] } = await pool.query(`
-      SELECT id, name, slug, banca, ano, nivel, data_prova, salario, numero_vagas, 
-             orgao, cidade, estado, edital_url, informacoes_scraper, created_at, updated_at
-      FROM concursos
-      WHERE id = $1
+      SELECT 
+        c.id, 
+        c.name, 
+        c.slug, 
+        COALESCE(b.display_name, b.name) as banca,
+        c.ano, 
+        c.nivel, 
+        c.data_prova, 
+        c.salario, 
+        c.numero_vagas, 
+        c.orgao, 
+        c.cidade, 
+        c.estado, 
+        c.edital_url, 
+        c.informacoes_scraper, 
+        c.created_at, 
+        c.updated_at
+      FROM concursos c
+      LEFT JOIN bancas b ON c.banca_id = b.id
+      WHERE c.id = $1
     `, [id]);
 
     if (!contest) {

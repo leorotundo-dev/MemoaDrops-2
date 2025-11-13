@@ -246,12 +246,38 @@ export async function adminRoutes(app: FastifyInstance) {
   // Listar concursos
   app.get('/admin/contests', async (req, reply) => {
     const { rows: contests } = await pool.query(`
-      SELECT id, name, slug, created_at
+      SELECT id, name, slug, banca, ano, nivel, data_prova, salario, numero_vagas, orgao, cidade, estado, edital_url, created_at
       FROM concursos
       ORDER BY name ASC
     `);
 
     return { data: contests };
+  });
+
+  // Buscar detalhes de um concurso específico
+  app.get('/admin/contests/:id', async (req, reply) => {
+    const { id } = req.params as any;
+
+    const { rows: [contest] } = await pool.query(`
+      SELECT id, name, slug, banca, ano, nivel, data_prova, salario, numero_vagas, 
+             orgao, cidade, estado, edital_url, informacoes_scraper, created_at, updated_at
+      FROM concursos
+      WHERE id = $1
+    `, [id]);
+
+    if (!contest) {
+      return reply.code(404).send({ error: 'contest_not_found' });
+    }
+
+    // Buscar matérias do concurso
+    const { rows: materias } = await pool.query(`
+      SELECT id, nome, created_at
+      FROM materias
+      WHERE contest_id = $1
+      ORDER BY nome ASC
+    `, [id]);
+
+    return { data: { ...contest, materias } };
   });
 
   // Criar concurso

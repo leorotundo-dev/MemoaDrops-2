@@ -63,6 +63,7 @@ import debugContests from './routes/debug-contests.js';
 import processContestsRoutes from './routes/process-contests.js';
 import adminMigrationRoutes from './routes/admin-migration.js';
 import adminMigration006Routes from './routes/admin-migration-006.js';
+import adminMigration007Routes from './routes/admin-migration-007.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -183,6 +184,7 @@ await debugContests(app);
 await processContestsRoutes(app);
 await adminMigrationRoutes(app);
 await adminMigration006Routes(app);
+await adminMigration007Routes(app);
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

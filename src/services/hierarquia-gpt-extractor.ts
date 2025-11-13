@@ -98,7 +98,7 @@ Retorne APENAS JSON válido, sem explicações.`;
         },
       ],
       temperature: 0.1,
-      max_tokens: 4000,
+      max_tokens: 16000,
       response_format: { type: 'json_object' },
     });
 

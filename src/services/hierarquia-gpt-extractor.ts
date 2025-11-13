@@ -4,20 +4,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-interface SubSubtopico {
-  nome: string;
-  descricao?: string;
-}
-
 interface Subtopico {
   nome: string;
-  descricao?: string;
-  subsubtopicos: SubSubtopico[];
 }
 
 interface Topico {
-  nome: string;
-  descricao?: string;
+  numero: number;
+  titulo: string;
   subtopicos: Subtopico[];
 }
 
@@ -43,50 +36,42 @@ export async function extractHierarquiaFromText(
 
     const prompt = `Você é um especialista em análise de editais de concursos públicos brasileiros.
 
-Analise o texto do edital abaixo e extraia a estrutura hierárquica completa do CONTEÚDO PROGRAMÁTICO:
+Analise o texto do edital e extraia TODAS as matérias/disciplinas com seus tópicos numerados.
 
-IMPORTANTE:
-- Extraia APENAS disciplinas/matérias reais de concursos (ex: Língua Portuguesa, Matemática, Direito, Informática)
-- IGNORE links de navegação (Início, Fale Conosco, Contato, etc.)
-- IGNORE seções administrativas do edital (Inscrições, Recursos, Cronograma, etc.)
-- Organize em hierarquia: Matéria → Tópico → Subtópico → Sub-subtópico
+REGRAS:
+1. Extraia APENAS matérias de concurso (Língua Portuguesa, Matemática, Direito, Informática, etc.)
+2. IGNORE: links de navegação, seções administrativas, anexos não-programáticos
+3. Para cada matéria, extraia TODOS os tópicos numerados (1, 2, 3, 4...)
+4. Para cada tópico, extraia os subtópicos separados por ponto, ponto-e-vírgula ou dois-pontos
+5. Mantenha o texto original dos tópicos
 
-ESTRUTURA ESPERADA:
+EXEMPLO DE EXTRAÇÃO:
+
+TEXTO DO EDITAL:
+"LÍNGUA PORTUGUESA
+1 Interpretação e compreensão de texto. Organização estrutural dos textos. 2 Marcas de textualidade: coesão, coerência e intertextualidade."
+
+JSON ESPERADO:
 {
   "materias": [
     {
       "nome": "Língua Portuguesa",
       "topicos": [
         {
-          "nome": "Gramática",
-          "descricao": "Estudo das regras gramaticais",
+          "numero": 1,
+          "titulo": "Interpretação e compreensão de texto. Organização estrutural dos textos.",
           "subtopicos": [
-            {
-              "nome": "Morfologia",
-              "descricao": "Classes gramaticais",
-              "subsubtopicos": [
-                { "nome": "Substantivos" },
-                { "nome": "Verbos" },
-                { "nome": "Adjetivos" }
-              ]
-            },
-            {
-              "nome": "Sintaxe",
-              "descricao": "Estrutura das frases",
-              "subsubtopicos": [
-                { "nome": "Análise Sintática" },
-                { "nome": "Período Composto" }
-              ]
-            }
+            {"nome": "Interpretação e compreensão de texto"},
+            {"nome": "Organização estrutural dos textos"}
           ]
         },
         {
-          "nome": "Interpretação de Texto",
+          "numero": 2,
+          "titulo": "Marcas de textualidade: coesão, coerência e intertextualidade.",
           "subtopicos": [
-            {
-              "nome": "Compreensão Textual",
-              "subsubtopicos": []
-            }
+            {"nome": "Coesão"},
+            {"nome": "Coerência"},
+            {"nome": "Intertextualidade"}
           ]
         }
       ]
@@ -95,20 +80,13 @@ ESTRUTURA ESPERADA:
   "confidence": "high"
 }
 
-REGRAS:
-1. Se não encontrar conteúdo programático claro, retorne array vazio com confidence "low"
-2. Use confidence "medium" se encontrar apenas lista simples de matérias
-3. Use confidence "high" se encontrar estrutura hierárquica completa
-4. Mantenha nomes em português correto
-5. Adicione descrições quando relevante
-
 TEXTO DO EDITAL:
 ${pdfText}
 
-Retorne APENAS o JSON, sem explicações.`;
+Retorne APENAS JSON válido, sem explicações.`;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-mini',
       messages: [
         {
           role: 'system',

@@ -105,9 +105,8 @@ export async function processHierarquiaForContest(
       
       // Salvar tópicos
       if (materia.topicos && materia.topicos.length > 0) {
-        for (let i = 0; i < materia.topicos.length; i++) {
-          const topico = materia.topicos[i];
-          const topicoSlug = generateSlug(topico.nome);
+        for (const topico of materia.topicos) {
+          const topicoSlug = generateSlug(topico.titulo);
           
           const topicoResult = await client.query(
             `INSERT INTO topicos (materia_id, nome, slug, descricao, ordem)
@@ -115,7 +114,7 @@ export async function processHierarquiaForContest(
              ON CONFLICT (materia_id, slug) DO UPDATE
              SET nome = EXCLUDED.nome, descricao = EXCLUDED.descricao, ordem = EXCLUDED.ordem
              RETURNING id`,
-            [materiaId, topico.nome, topicoSlug, topico.descricao || null, i]
+            [materiaId, topico.titulo, topicoSlug, `Tópico ${topico.numero}`, topico.numero - 1]
           );
           
           const topicoId = topicoResult.rows[0].id;
@@ -127,35 +126,15 @@ export async function processHierarquiaForContest(
               const subtopico = topico.subtopicos[j];
               const subtopicoSlug = generateSlug(subtopico.nome);
               
-              const subtopicoResult = await client.query(
+              await client.query(
                 `INSERT INTO subtopicos (topico_id, nome, slug, descricao, ordem)
                  VALUES ($1, $2, $3, $4, $5)
                  ON CONFLICT (topico_id, slug) DO UPDATE
-                 SET nome = EXCLUDED.nome, descricao = EXCLUDED.descricao, ordem = EXCLUDED.ordem
-                 RETURNING id`,
-                [topicoId, subtopico.nome, subtopicoSlug, subtopico.descricao || null, j]
+                 SET nome = EXCLUDED.nome, descricao = EXCLUDED.descricao, ordem = EXCLUDED.ordem`,
+                [topicoId, subtopico.nome, subtopicoSlug, null, j]
               );
               
-              const subtopicoId = subtopicoResult.rows[0].id;
               subtopicosCount++;
-              
-              // Salvar sub-subtópicos
-              if (subtopico.subsubtopicos && subtopico.subsubtopicos.length > 0) {
-                for (let k = 0; k < subtopico.subsubtopicos.length; k++) {
-                  const subsubtopico = subtopico.subsubtopicos[k];
-                  const subsubtopicoSlug = generateSlug(subsubtopico.nome);
-                  
-                  await client.query(
-                    `INSERT INTO subsubtopicos (subtopico_id, nome, slug, descricao, ordem)
-                     VALUES ($1, $2, $3, $4, $5)
-                     ON CONFLICT (subtopico_id, slug) DO UPDATE
-                     SET nome = EXCLUDED.nome, descricao = EXCLUDED.descricao, ordem = EXCLUDED.ordem`,
-                    [subtopicoId, subsubtopico.nome, subsubtopicoSlug, subsubtopico.descricao || null, k]
-                  );
-                  
-                  subsubtopicosCount++;
-                }
-              }
             }
           }
         }

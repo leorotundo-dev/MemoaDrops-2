@@ -1,9 +1,9 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { pool } from '../db/connection.js';
-import { extractCopeveConcursoData } from './extractors/copeve.js';
-import { extractFuncernConcursoData } from './extractors/funcern.js';
-import { extractFgvConcursoData } from './extractors/fgv.js';
+import { extractCopeveConcursoData } from './extractors/copeve-extractor.js';
+import { extractFuncernConcursoData } from './extractors/funcern-extractor.js';
+import { extractFgvConcursoData } from './extractors/fgv-extractor.js';
 import { processContestMaterias } from './materias-processor.js';
 
 /**

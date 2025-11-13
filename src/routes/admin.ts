@@ -259,7 +259,8 @@ export async function adminRoutes(app: FastifyInstance) {
         c.orgao, 
         c.cidade, 
         c.estado, 
-        c.edital_url, 
+        c.edital_url,
+        c.contest_url, 
         c.created_at
       FROM concursos c
       LEFT JOIN bancas b ON c.banca_id = b.id
@@ -287,7 +288,8 @@ export async function adminRoutes(app: FastifyInstance) {
         c.orgao, 
         c.cidade, 
         c.estado, 
-        c.edital_url, 
+        c.edital_url,
+        c.contest_url, 
         c.informacoes_scraper, 
         c.created_at, 
         c.updated_at

@@ -55,7 +55,9 @@ export async function processContestMaterias(
     
     // 4. Extrair matérias com GPT-4
     console.log(`[Materias Processor] Extraindo matérias com GPT-4...`);
+    console.log(`[Materias Processor] Texto limpo tem ${cleanText.length} caracteres`);
     const result = await extractMateriasWithRetry(cleanText, contestName);
+    console.log(`[Materias Processor] GPT-4 retornou ${result.materias.length} matérias`);
     
     if (result.materias.length === 0) {
       console.warn(`[Materias Processor] Nenhuma matéria encontrada`);
@@ -86,6 +88,7 @@ export async function processContestMaterias(
     
   } catch (error: any) {
     console.error(`[Materias Processor] ❌ Erro ao processar matérias:`, error.message);
+    console.error(`[Materias Processor] Stack trace:`, error.stack);
     
     return {
       success: false,

@@ -5,7 +5,7 @@ import { createHash } from 'crypto';
 const bancaIdCache = new Map<string, number>();
 
 /**
- * Busca ID numérico da banca pelo slug
+ * Busca ID numérico da banca pelo slug (name)
  */
 export async function getBancaId(slug: string): Promise<number> {
   if (bancaIdCache.has(slug)) {
@@ -33,20 +33,38 @@ export function sha256(s: string) {
 /**
  * Insere ou atualiza um concurso descoberto
  * Adaptado para schema do MemoDrops (tabela concursos)
+ * 
+ * Mapeamento de colunas:
+ * - external_id: ID na fonte original
+ * - name: título do concurso
+ * - contest_url: URL do concurso
+ * - status: status do concurso
+ * - informacoes_scraper: metadados JSON
  */
 export async function upsertContest(bancaId: number, externalId: string, data: any) {
   const { title, url, status, raw } = data;
   
   await pool.query(`
-    INSERT INTO concursos (banca_id, external_id, nome, url, status, metadata, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, now(), now())
+    INSERT INTO concursos (
+      banca_id, 
+      external_id, 
+      name, 
+      contest_url, 
+      status, 
+      informacoes_scraper, 
+      scraped_at,
+      created_at, 
+      updated_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), NOW())
     ON CONFLICT (banca_id, external_id) 
     DO UPDATE SET 
-      nome = EXCLUDED.nome,
-      url = EXCLUDED.url,
+      name = EXCLUDED.name,
+      contest_url = EXCLUDED.contest_url,
       status = COALESCE(EXCLUDED.status, concursos.status),
-      metadata = COALESCE(EXCLUDED.metadata, concursos.metadata),
-      updated_at = now()
+      informacoes_scraper = COALESCE(EXCLUDED.informacoes_scraper, concursos.informacoes_scraper),
+      scraped_at = NOW(),
+      updated_at = NOW()
   `, [bancaId, externalId, title, url, status || 'descoberto', raw || {}]);
 }
 

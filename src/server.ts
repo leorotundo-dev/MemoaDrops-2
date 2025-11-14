@@ -79,6 +79,7 @@ import { registerAdminCosts } from './routes/admin-costs.js';
 import { registerAdminBancasReviews } from './routes/admin-bancas-reviews.js';
 import { registerAdminBancasMetrics } from './routes/admin-bancas-metrics.js';
 import { adminScrapersRoutes } from './routes/admin-scrapers.js';
+import adminRunMigration048Routes from './routes/admin-run-migration.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -214,6 +215,7 @@ await registerAdminBancasMetrics(app);
 await app.register(adminScrapersRoutes);
 await app.register(adminRunMigrationsRoutes);
 await app.register(adminExecSqlRoutes);
+await app.register(adminRunMigration048Routes);
 await registerTutorRoutes(app);
 
 // Garante que tudo foi carregado antes de expor o Swagger

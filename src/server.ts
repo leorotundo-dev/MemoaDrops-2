@@ -75,7 +75,7 @@ import adminRunMigrationsRoutes from './routes/admin.run-migrations.js';
 import adminExecSqlRoutes from './routes/admin.exec-sql.js';
 import { registerTutorRoutes } from './routes/tutor.js';
 import { registerAdminCosts } from './routes/admin-costs.js';
-import registerAdminBancasRoutes from './routes/admin-bancas.js';
+import { registerAdminBancasRoutes } from './routes/admin-bancas.js';
 import { registerAdminBancasReviews } from './routes/admin-bancas-reviews.js';
 import { registerAdminBancasMetrics } from './routes/admin-bancas-metrics.js';
 import { adminScrapersRoutes } from './routes/admin-scrapers.js';

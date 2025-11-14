@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { pool } from '../db/connection.js';
 
-export default async function registerAdminBancasRoutes(app: FastifyInstance) {
+export async function registerAdminBancasRoutes(app: FastifyInstance) {
   
   /**
    * GET /admin/bancas

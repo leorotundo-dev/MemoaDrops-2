@@ -21,7 +21,7 @@ function ensurePdfDir(): void {
 /**
  * Baixa um PDF de uma URL e salva localmente
  */
-export async function downloadPdf(url: string, contestId: string): Promise<string> {
+export async function downloadPdf(url: string, destPathOrContestId: string): Promise<string> {
   try {
     ensurePdfDir();
     
@@ -43,8 +43,10 @@ export async function downloadPdf(url: string, contestId: string): Promise<strin
     }
     
     // Salvar arquivo
-    const filename = `${contestId}.pdf`;
-    const filepath = path.join(PDF_TEMP_DIR, filename);
+    // Se destPathOrContestId contém '/', é um caminho completo
+    const filepath = destPathOrContestId.includes('/') || destPathOrContestId.includes('\\')
+      ? destPathOrContestId
+      : path.join(PDF_TEMP_DIR, `${destPathOrContestId}.pdf`);
     
     fs.writeFileSync(filepath, response.data);
     

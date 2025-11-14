@@ -76,35 +76,47 @@ export async function classificarQuestao(
     
     const prompt = `Você é um especialista em classificação de questões de concursos públicos.
 
-Analise a questão abaixo e identifique a(s) matéria(s) e tópico(s) que ela aborda.
+Sua tarefa é analisar a questão e identificar qual(is) matéria(s) da lista ela aborda.
 
-MATÉRIAS E TÓPICOS DISPONÍVEIS:
+## MATÉRIAS E TÓPICOS DISPONÍVEIS:
 ${materiasTexto}
 
-QUESTÃO:
+## QUESTÃO A CLASSIFICAR:
 ${enunciado}
 
-INSTRUÇÕES:
-1. Identifique a matéria principal da questão
-2. Se houver tópicos disponíveis, identifique o tópico mais específico
-3. Atribua uma relevância de 0.0 a 1.0 (1.0 = totalmente relevante)
-4. Forneça uma breve justificativa
-5. Se a questão abordar múltiplas matérias, liste até ${opcoes?.maxClassificacoes || 2}
-6. Retorne APENAS matérias e tópicos da lista fornecida
+## INSTRUÇÕES IMPORTANTES:
+1. Analise o CONTEÚDO da questão, não apenas palavras-chave
+2. Escolha a matéria mais ESPECÍFICA que se aplica
+3. Use EXATAMENTE o ID e nome fornecidos na lista acima
+4. Se a questão menciona "SQL", "SELECT", "banco de dados" → use "SQL e Bancos de Dados Relacionais"
+5. Se a questão menciona "POO", "classe", "objeto", "encapsulamento" → use "Programação Orientada a Objetos"
+6. Se a questão menciona "HTTPS", "protocolo", "rede" → use "Protocolos de Rede e Segurança"
+7. Atribua relevância de 0.8 a 1.0 para alta confiança, 0.5 a 0.7 para média
+8. Pode classificar em até ${opcoes?.maxClassificacoes || 2} matérias se a questão for multidisciplinar
 
-Formato de saída (JSON):
+## EXEMPLOS:
+
+Questão: "Qual comando SQL é usado para recuperar dados?"
+Resposta: {"classificacoes": [{"materia_id": "<id-da-materia-sql>", "materia_nome": "SQL e Bancos de Dados Relacionais", "relevancia": 1.0, "justificativa": "Questão sobre comando SQL SELECT"}]}
+
+Questão: "O que é encapsulamento em POO?"
+Resposta: {"classificacoes": [{"materia_id": "<id-da-materia-poo>", "materia_nome": "Programação Orientada a Objetos", "relevancia": 1.0, "justificativa": "Questão sobre conceito fundamental de POO"}]}
+
+## FORMATO DE SAÍDA (JSON):
 {
   "classificacoes": [
     {
-      "materia_id": "uuid-da-materia",
-      "materia_nome": "Nome da Matéria",
-      "topico_id": "uuid-do-topico",
-      "topico_nome": "Nome do Tópico",
-      "relevancia": 1.0,
-      "justificativa": "Breve explicação"
+      "materia_id": "<copie-o-uuid-exato-da-lista-acima>",
+      "materia_nome": "<copie-o-nome-exato-da-lista-acima>",
+      "topico_id": "<opcional-se-houver-topico>",
+      "topico_nome": "<opcional-se-houver-topico>",
+      "relevancia": 0.9,
+      "justificativa": "Breve explicação do porquê"
     }
   ]
-}`;
+}
+
+IMPORTANTE: Retorne APENAS matérias que existem na lista fornecida. Se não tiver certeza, escolha a mais próxima.`;
 
     const completion = await openai.chat.completions.create({
       model: opcoes?.modelo || 'gpt-4.1-mini',
@@ -118,7 +130,7 @@ Formato de saída (JSON):
           content: prompt
         }
       ],
-      temperature: 0.2, // Baixa temperatura para maior consistência
+      temperature: 0.4, // Temperatura moderada para equilíbrio entre consistência e flexibilidade
       response_format: { type: 'json_object' }
     });
     

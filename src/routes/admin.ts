@@ -376,17 +376,17 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Criar matéria
   app.post('/admin/subjects', async (req, reply) => {
-    const { nome, slug } = req.body as any;
+    const { nome, slug, concurso_id } = req.body as any;
 
-    if (!nome || !slug) {
+    if (!nome || !slug || !concurso_id) {
       return reply.code(400).send({ error: 'missing_fields' });
     }
 
     const { rows: [subject] } = await pool.query(`
-      INSERT INTO materias (nome, slug, created_at)
-      VALUES ($1, $2, NOW())
-      RETURNING id, nome, slug, created_at
-    `, [nome, slug]);
+      INSERT INTO materias (nome, slug, contest_id, created_at)
+      VALUES ($1, $2, $3, NOW())
+      RETURNING id, nome, slug, contest_id, created_at
+    `, [nome, slug, concurso_id]);
 
     return { subject };
   });

@@ -132,7 +132,7 @@ export async function registerAdminCosts(app: FastifyInstance){
         WITH c AS (SELECT SUM(total_cost) AS brl FROM cost_events ${where} AND feature='gerar_deck'),
              n AS (SELECT COUNT(*)::numeric AS qty FROM cards WHERE created_at >= COALESCE($2::date, date_trunc('day', now())-interval '30 days'))
         SELECT ROUND(c.brl / NULLIF(n.qty,0), 4) AS brl_per_card FROM c, n
-      `, [...args, from || None])
+      `, [...args, from || null])
       reply.send(r || { brl_per_card: 0 });
       return;
     }
@@ -141,7 +141,7 @@ export async function registerAdminCosts(app: FastifyInstance){
         WITH c AS (SELECT SUM(total_cost) AS brl FROM cost_events ${where} AND feature='harvester'),
              n AS (SELECT COUNT(*)::numeric AS qty FROM contests WHERE created_at >= COALESCE($2::date, date_trunc('day', now())-interval '30 days'))
         SELECT ROUND(c.brl / NULLIF(n.qty,0), 4) AS brl_per_concurso FROM c, n
-      `, [...args, from || None])
+      `, [...args, from || null])
       reply.send(r || { brl_per_concurso: 0 });
       return;
     }

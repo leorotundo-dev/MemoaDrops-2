@@ -13,7 +13,7 @@ export async function getBancaId(slug: string): Promise<number> {
   }
   
   const { rows } = await pool.query(
-    'SELECT id FROM bancas WHERE LOWER(name) = LOWER($1) OR LOWER(slug) = LOWER($1) LIMIT 1',
+    'SELECT id FROM bancas WHERE LOWER(name) = LOWER($1) LIMIT 1',
     [slug]
   );
   

@@ -26,6 +26,16 @@ export async function adminRoutes(app: FastifyInstance) {
     }
   });
   
+  app.post('/admin/setup/query', async (request, reply) => {
+    try {
+      const { sql } = request.body as { sql: string };
+      const result = await pool.query(sql);
+      return { rows: result.rows, rowCount: result.rowCount };
+    } catch (error: any) {
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+  
   app.post('/admin/setup/create-admin', async (request, reply) => {
     try {
       const { email, password, name } = request.body as { email: string; password: string; name?: string };

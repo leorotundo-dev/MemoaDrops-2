@@ -14,7 +14,7 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
 
       if (search) {
         paramCount++;
-        query += ` AND (b.name ILIKE $${paramCount} OR b.display_name ILIKE $${paramCount} OR b.full_name ILIKE $${paramCount})`;
+        query += ` AND (b.name ILIKE $${paramCount} OR b.display_name ILIKE $${paramCount} OR b.short_name ILIKE $${paramCount})`;
         params.push(`%${search}%`);
       }
       if (area && area !== 'all') {

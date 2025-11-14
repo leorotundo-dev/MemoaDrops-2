@@ -752,6 +752,12 @@ export async function adminRoutes(app: FastifyInstance) {
       }
       
       // Calcular próxima revisão usando SM-2
+      console.log('[DEBUG] Usuario Drop:', {
+        easiness_factor: usuarioDrop.easiness_factor,
+        intervalo_atual_dias: usuarioDrop.intervalo_atual_dias,
+        numero_revisoes: usuarioDrop.numero_revisoes
+      });
+      
       const resultado = calcularProximaRevisao(
         {
           easiness_factor: usuarioDrop.easiness_factor,
@@ -760,6 +766,8 @@ export async function adminRoutes(app: FastifyInstance) {
         },
         qualidade
       );
+      
+      console.log('[DEBUG] Resultado SM-2:', resultado);
       
       // Calcular nova qualidade média
       const novaQualidadeMedia = calcularQualidadeMedia(

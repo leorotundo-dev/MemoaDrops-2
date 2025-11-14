@@ -1,5 +1,6 @@
 import { extractTextFromPdf } from './pdf-text-extractor.js';
 import OpenAI from 'openai';
+import { recordCostEvent } from '../routes/admin-costs.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -107,6 +108,7 @@ Formato de saída (JSON):
 TEXTO DA PROVA:
 ${textoParaProcessar}`;
 
+    const startTime = Date.now();
     const completion = await openai.chat.completions.create({
       model: opcoes?.modelo || 'gpt-4.1-mini',
       messages: [
@@ -129,6 +131,37 @@ ${textoParaProcessar}`;
     }
     
     console.log(`[PDF Questões Extractor] Resposta recebida do GPT-4`);
+    
+    // Registrar custo da operação
+    const inputTokens = completion.usage?.prompt_tokens || 0;
+    const outputTokens = completion.usage?.completion_tokens || 0;
+    
+    try {
+      await recordCostEvent({
+        provider: 'openai',
+        service: 'gpt-4.1-mini:input_token',
+        env: 'prod',
+        feature: 'processar_pdf',
+        unit: 'tokens',
+        quantity: inputTokens,
+        meta: { modelo: opcoes?.modelo || 'gpt-4.1-mini', pdf: pdfPath, duracao_ms: Date.now() - startTime }
+      });
+      
+      await recordCostEvent({
+        provider: 'openai',
+        service: 'gpt-4.1-mini:output_token',
+        env: 'prod',
+        feature: 'processar_pdf',
+        unit: 'tokens',
+        quantity: outputTokens,
+        meta: { modelo: opcoes?.modelo || 'gpt-4.1-mini', pdf: pdfPath, duracao_ms: Date.now() - startTime }
+      });
+      
+      console.log(`[PDF Questões Extractor] Custo registrado: ${inputTokens} input + ${outputTokens} output tokens`);
+    } catch (costError) {
+      console.error('[PDF Questões Extractor] Erro ao registrar custo:', costError);
+      // Não falha a operação principal se o tracking falhar
+    }
     
     // 4. Parsear resposta JSON
     const dados = JSON.parse(resposta);

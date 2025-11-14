@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { recordCostEvent } from '../routes/admin-costs.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -118,6 +119,7 @@ Resposta: {"classificacoes": [{"materia_id": "<id-da-materia-poo>", "materia_nom
 
 IMPORTANTE: Retorne APENAS matérias que existem na lista fornecida. Se não tiver certeza, escolha a mais próxima.`;
 
+    const startTime = Date.now();
     const completion = await openai.chat.completions.create({
       model: opcoes?.modelo || 'gpt-4.1-mini',
       messages: [
@@ -140,6 +142,37 @@ IMPORTANTE: Retorne APENAS matérias que existem na lista fornecida. Se não tiv
     }
     
     console.log(`[Classificador] Resposta recebida do GPT-4:`, resposta);
+    
+    // Registrar custo da operação
+    const inputTokens = completion.usage?.prompt_tokens || 0;
+    const outputTokens = completion.usage?.completion_tokens || 0;
+    
+    try {
+      await recordCostEvent({
+        provider: 'openai',
+        service: 'gpt-4.1-mini:input_token',
+        env: 'prod',
+        feature: 'classificar_questao',
+        unit: 'tokens',
+        quantity: inputTokens,
+        meta: { modelo: opcoes?.modelo || 'gpt-4.1-mini', duracao_ms: Date.now() - startTime }
+      });
+      
+      await recordCostEvent({
+        provider: 'openai',
+        service: 'gpt-4.1-mini:output_token',
+        env: 'prod',
+        feature: 'classificar_questao',
+        unit: 'tokens',
+        quantity: outputTokens,
+        meta: { modelo: opcoes?.modelo || 'gpt-4.1-mini', duracao_ms: Date.now() - startTime }
+      });
+      
+      console.log(`[Classificador] Custo registrado: ${inputTokens} input + ${outputTokens} output tokens`);
+    } catch (costError) {
+      console.error('[Classificador] Erro ao registrar custo:', costError);
+      // Não falha a operação principal se o tracking falhar
+    }
     
     // Parsear resposta JSON
     const dados = JSON.parse(resposta);

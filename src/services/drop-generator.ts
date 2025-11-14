@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { recordCostEvent } from '../routes/admin-costs.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -132,6 +133,7 @@ IMPORTANTE:
 - As técnicas de memorização devem ser específicas e práticas
 - Use markdown para formatação (negrito, listas, etc)`;
 
+    const startTime = Date.now();
     const completion = await openai.chat.completions.create({
       model: opcoes?.modelo || 'gpt-4.1-mini',
       messages: [
@@ -154,6 +156,37 @@ IMPORTANTE:
     }
     
     console.log(`[Drop Generator] Resposta recebida do GPT-4`);
+    
+    // Registrar custo da operação
+    const inputTokens = completion.usage?.prompt_tokens || 0;
+    const outputTokens = completion.usage?.completion_tokens || 0;
+    
+    try {
+      await recordCostEvent({
+        provider: 'openai',
+        service: 'gpt-4.1-mini:input_token',
+        env: 'prod',
+        feature: 'gerar_drop',
+        unit: 'tokens',
+        quantity: inputTokens,
+        meta: { modelo: opcoes?.modelo || 'gpt-4.1-mini', materia: questao.materia_nome, duracao_ms: Date.now() - startTime }
+      });
+      
+      await recordCostEvent({
+        provider: 'openai',
+        service: 'gpt-4.1-mini:output_token',
+        env: 'prod',
+        feature: 'gerar_drop',
+        unit: 'tokens',
+        quantity: outputTokens,
+        meta: { modelo: opcoes?.modelo || 'gpt-4.1-mini', materia: questao.materia_nome, duracao_ms: Date.now() - startTime }
+      });
+      
+      console.log(`[Drop Generator] Custo registrado: ${inputTokens} input + ${outputTokens} output tokens`);
+    } catch (costError) {
+      console.error('[Drop Generator] Erro ao registrar custo:', costError);
+      // Não falha a operação principal se o tracking falhar
+    }
     
     // Parsear resposta JSON
     const drop: DropGerado = JSON.parse(resposta);

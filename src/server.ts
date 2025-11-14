@@ -74,6 +74,7 @@ import adminGerarDropsRoutes from './routes/admin.gerar-drops.js';
 import adminRunMigrationsRoutes from './routes/admin.run-migrations.js';
 import adminExecSqlRoutes from './routes/admin.exec-sql.js';
 import { registerTutorRoutes } from './routes/tutor.js';
+import { registerAdminCosts } from './routes/admin-costs.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -202,6 +203,7 @@ await app.register(adminImportFgvRoutes);
 await app.register(adminProcessarArquivoRoutes);
 await app.register(adminClassificarQuestoesRoutes);
 await app.register(adminGerarDropsRoutes);
+await registerAdminCosts(app);
 await app.register(adminRunMigrationsRoutes);
 await app.register(adminExecSqlRoutes);
 await registerTutorRoutes(app);

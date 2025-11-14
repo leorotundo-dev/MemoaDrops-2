@@ -127,21 +127,27 @@ Formato de saída (JSON):
       throw new Error('GPT-4 retornou resposta vazia');
     }
     
-    console.log(`[Classificador] Resposta recebida do GPT-4`);
+    console.log(`[Classificador] Resposta recebida do GPT-4:`, resposta);
     
     // Parsear resposta JSON
     const dados = JSON.parse(resposta);
+    console.log(`[Classificador] Dados parseados:`, JSON.stringify(dados, null, 2));
     const classificacoes: ClassificacaoSugerida[] = dados.classificacoes || [];
     
     // Validar classificações
+    console.log(`[Classificador] Validando ${classificacoes.length} classificações...`);
     const classificacoesValidas = classificacoes.filter(c => {
+      console.log(`[Classificador] Validando: materia_id=${c.materia_id}, topico_id=${c.topico_id}`);
+      
       // Verificar se materia_id existe na lista
       const materiaExiste = materiasDisponiveis.some(m => m.id === c.materia_id);
+      console.log(`[Classificador] Matéria existe? ${materiaExiste}`);
       
       // Se tópico foi especificado, verificar se existe
       if (c.topico_id) {
         const materia = materiasDisponiveis.find(m => m.id === c.materia_id);
         const topicoExiste = materia?.topicos?.some(t => t.id === c.topico_id);
+        console.log(`[Classificador] Tópico existe? ${topicoExiste}`);
         return materiaExiste && topicoExiste;
       }
       

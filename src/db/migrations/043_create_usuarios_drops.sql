@@ -5,7 +5,7 @@
 -- Tabela principal de tracking de drops por usuário
 CREATE TABLE IF NOT EXISTS usuarios_drops (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  usuario_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   drop_id UUID NOT NULL REFERENCES drops(id) ON DELETE CASCADE,
   
   -- Tracking de revisões

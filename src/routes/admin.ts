@@ -636,7 +636,7 @@ export async function adminRoutes(app: FastifyInstance) {
     try {
       // TODO: Pegar usuario_id do token de autenticação
       // Por enquanto, usar um usuário padrão para testes
-      const { rows: usuarios } = await pool.query('SELECT id FROM usuarios LIMIT 1');
+      const { rows: usuarios } = await pool.query('SELECT id FROM users LIMIT 1');
       
       if (usuarios.length === 0) {
         return reply.status(404).send({ erro: 'Nenhum usuário encontrado' });
@@ -735,7 +735,7 @@ export async function adminRoutes(app: FastifyInstance) {
       }
       
       // TODO: Pegar usuario_id do token de autenticação
-      const { rows: usuarios } = await pool.query('SELECT id FROM usuarios LIMIT 1');
+      const { rows: usuarios } = await pool.query('SELECT id FROM users LIMIT 1');
       if (usuarios.length === 0) {
         return reply.status(404).send({ erro: 'Nenhum usuário encontrado' });
       }
@@ -825,7 +825,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get('/drops/estatisticas', async (request, reply) => {
     try {
       // TODO: Pegar usuario_id do token de autenticação
-      const { rows: usuarios } = await pool.query('SELECT id FROM usuarios LIMIT 1');
+      const { rows: usuarios } = await pool.query('SELECT id FROM users LIMIT 1');
       if (usuarios.length === 0) {
         return reply.status(404).send({ erro: 'Nenhum usuário encontrado' });
       }

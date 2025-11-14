@@ -420,6 +420,20 @@ export async function adminRoutes(app: FastifyInstance) {
     return { ok: true, message: `Matéria ${id} deletada` };
   });
 
+  // Listar tópicos de uma matéria
+  app.get('/admin/subjects/:id/topicos', async (req, reply) => {
+    const { id } = req.params as any;
+
+    const { rows: topicos } = await pool.query(`
+      SELECT id, materia_id, nome, slug, descricao, parent_id, nivel, ordem, created_at
+      FROM topicos
+      WHERE materia_id = $1
+      ORDER BY nivel ASC, ordem ASC, nome ASC
+    `, [id]);
+
+    return { data: topicos, total: topicos.length };
+  });
+
   // ============================================
   // GESTÃO FINANCEIRA
   // ============================================

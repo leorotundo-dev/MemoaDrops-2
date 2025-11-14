@@ -1,6 +1,31 @@
 import { pool } from '../../utils/db.js';
 import { createHash } from 'crypto';
 
+// Cache de IDs de bancas por slug
+const bancaIdCache = new Map<string, number>();
+
+/**
+ * Busca ID numérico da banca pelo slug
+ */
+export async function getBancaId(slug: string): Promise<number> {
+  if (bancaIdCache.has(slug)) {
+    return bancaIdCache.get(slug)!;
+  }
+  
+  const { rows } = await pool.query(
+    'SELECT id FROM bancas WHERE LOWER(name) = LOWER($1) OR LOWER(slug) = LOWER($1) LIMIT 1',
+    [slug]
+  );
+  
+  if (rows.length === 0) {
+    throw new Error(`Banca não encontrada: ${slug}`);
+  }
+  
+  const id = rows[0].id;
+  bancaIdCache.set(slug, id);
+  return id;
+}
+
 export function sha256(s: string) {
   return createHash('sha256').update(s).digest('hex');
 }

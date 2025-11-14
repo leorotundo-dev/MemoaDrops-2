@@ -60,3 +60,12 @@ export async function safeRunBanca(bancaId:number, base:string, pattern:RegExp, 
     return { bancaId, error: reason };
   }
 }
+
+/**
+ * Wrapper que aceita slug e busca ID numérico
+ */
+export async function safeRunBancaBySlug(slug:string, base:string, pattern:RegExp, mode:'static'|'headless'){
+  const { getBancaId } = await import('./_utils.js');
+  const bancaId = await getBancaId(slug);
+  return safeRunBanca(bancaId, base, pattern, mode);
+}

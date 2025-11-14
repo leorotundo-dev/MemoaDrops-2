@@ -1017,3 +1017,75 @@ export async function adminRoutes(app: FastifyInstance) {
   // Todas as rotas de /admin/bancas/* e /admin/scrapers/* foram movidas para
   // arquivos específicos com autenticação e autorização adequadas
 }
+
+  // ============================================
+  // ENDPOINT TEMPORÁRIO PÚBLICO - EXECUTAR MIGRATION 048
+  // ============================================
+  app.post('/public/run-migration-048', async (req, reply) => {
+    try {
+      await db.raw(`
+        DO $$ 
+        BEGIN
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='ano') THEN
+            ALTER TABLE concursos ADD COLUMN ano INTEGER;
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='nivel') THEN
+            ALTER TABLE concursos ADD COLUMN nivel VARCHAR(50);
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='orgao') THEN
+            ALTER TABLE concursos ADD COLUMN orgao TEXT;
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='estado') THEN
+            ALTER TABLE concursos ADD COLUMN estado VARCHAR(2);
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='cidade') THEN
+            ALTER TABLE concursos ADD COLUMN cidade VARCHAR(255);
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='numero_vagas') THEN
+            ALTER TABLE concursos ADD COLUMN numero_vagas INTEGER;
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='salario_min') THEN
+            ALTER TABLE concursos ADD COLUMN salario_min DECIMAL(10,2);
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='salario_max') THEN
+            ALTER TABLE concursos ADD COLUMN salario_max DECIMAL(10,2);
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='data_inscricao_inicio') THEN
+            ALTER TABLE concursos ADD COLUMN data_inscricao_inicio DATE;
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='data_inscricao_fim') THEN
+            ALTER TABLE concursos ADD COLUMN data_inscricao_fim DATE;
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='data_prova') THEN
+            ALTER TABLE concursos ADD COLUMN data_prova DATE;
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='data_resultado') THEN
+            ALTER TABLE concursos ADD COLUMN data_resultado DATE;
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='edital_url') THEN
+            ALTER TABLE concursos ADD COLUMN edital_url TEXT;
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='site_oficial_url') THEN
+            ALTER TABLE concursos ADD COLUMN site_oficial_url TEXT;
+          END IF;
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='concursos' AND column_name='inscricoes_url') THEN
+            ALTER TABLE concursos ADD COLUMN inscricoes_url TEXT;
+          END IF;
+        END $$;
+      `);
+      
+      await db.raw(`
+        CREATE INDEX IF NOT EXISTS idx_concursos_ano ON concursos(ano);
+        CREATE INDEX IF NOT EXISTS idx_concursos_nivel ON concursos(nivel);
+        CREATE INDEX IF NOT EXISTS idx_concursos_estado ON concursos(estado);
+        CREATE INDEX IF NOT EXISTS idx_concursos_cidade ON concursos(cidade);
+        CREATE INDEX IF NOT EXISTS idx_concursos_data_inscricao_fim ON concursos(data_inscricao_fim);
+        CREATE INDEX IF NOT EXISTS idx_concursos_data_prova ON concursos(data_prova);
+      `);
+      
+      return { success: true, message: 'Migration 048 executada com sucesso!' };
+    } catch (error: any) {
+      console.error('[Admin] Erro ao executar migration:', error);
+      return reply.status(500).send({ error: error.message });
+    }
+  });

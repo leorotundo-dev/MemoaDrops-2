@@ -20,7 +20,7 @@ export async function extractTextFromPdf(pdfPath: string): Promise<string> {
     // -layout: mantém o layout original
     // -enc UTF-8: codificação UTF-8
     // -: output para stdout
-    const { stdout, stderr } = await execAsync(`pdftotext -layout -enc UTF-8 "${pdfPath}" -`);
+    const { stdout, stderr } = await execAsync(`pdftotext -layout -enc UTF-8 "${pdfPath}" -`, { maxBuffer: 10 * 1024 * 1024 }); // 10MB buffer
     
     if (stderr && !stderr.includes('Warning')) {
       console.warn(`[PDF Text Extractor] Avisos: ${stderr}`);
@@ -54,7 +54,7 @@ export async function extractTextFromPdfPages(pdfPath: string, maxPages: number 
     }
     
     // -l: limitar número de páginas
-    const { stdout, stderr } = await execAsync(`pdftotext -layout -enc UTF-8 -l ${maxPages} "${pdfPath}" -`);
+    const { stdout, stderr } = await execAsync(`pdftotext -layout -enc UTF-8 -l ${maxPages} "${pdfPath}" -`, { maxBuffer: 10 * 1024 * 1024 }); // 10MB buffer
     
     if (stderr && !stderr.includes('Warning')) {
       console.warn(`[PDF Text Extractor] Avisos: ${stderr}`);

@@ -217,11 +217,24 @@ IMPORTANTE: Retorne APENAS matérias que existem na lista fornecida. Se não tiv
     console.log(`[Classificador] Classificações válidas: ${classificacoesValidas.length}/${classificacoes.length}`);
     
     if (classificacoesValidas.length === 0) {
-      return {
-        sucesso: false,
-        classificacoes: [],
-        erro: 'IA não conseguiu classificar a questão nas matérias disponíveis'
-      };
+      console.log(`[Classificador] IA retornou array vazio, forçando classificação com primeira matéria`);
+      // Fallback final: classificar na primeira matéria disponível
+      if (materiasDisponiveis.length > 0) {
+        const materiaFallback = materiasDisponiveis[0];
+        classificacoesValidas.push({
+          materia_id: materiaFallback.id,
+          materia_nome: materiaFallback.nome,
+          relevancia: 0.5,
+          justificativa: 'Classificação automática (fallback) - IA não conseguiu classificar especificamente'
+        });
+        console.log(`[Classificador] Classificado automaticamente em: ${materiaFallback.nome}`);
+      } else {
+        return {
+          sucesso: false,
+          classificacoes: [],
+          erro: 'Nenhuma matéria disponível para classificação'
+        };
+      }
     }
     
     return {

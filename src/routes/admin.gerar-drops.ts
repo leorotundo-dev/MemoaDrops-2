@@ -50,7 +50,7 @@ const adminGerarDropsRoutes: FastifyPluginAsync = async (fastify) => {
       // 3. Buscar alternativas
       const alternativas = await db('alternativas')
         .where('questao_id', id)
-        .select('letra', 'texto', 'correta')
+        .select('letra', 'texto')
         .orderBy('letra', 'asc');
       
       // 4. Buscar classificação (matéria/tópico)

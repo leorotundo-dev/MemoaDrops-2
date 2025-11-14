@@ -365,11 +365,22 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Listar matérias
   app.get('/admin/subjects', async (req, reply) => {
-    const { rows: subjects } = await pool.query(`
-      SELECT id, name, slug, created_at
+    const { concurso_id } = req.query as any;
+    
+    let query = `
+      SELECT id, nome, slug, contest_id, created_at
       FROM materias
-      ORDER BY name ASC
-    `);
+    `;
+    const params: any[] = [];
+    
+    if (concurso_id) {
+      query += ` WHERE contest_id = $1`;
+      params.push(concurso_id);
+    }
+    
+    query += ` ORDER BY nome ASC`;
+    
+    const { rows: subjects } = await pool.query(query, params);
 
     return { subjects };
   });

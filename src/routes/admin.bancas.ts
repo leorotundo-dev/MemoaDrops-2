@@ -4,6 +4,43 @@ import { requireAdmin } from '../middleware/authorize.js';
 import { pool } from '../db/connection.js';
 
 export async function registerAdminBancaRoutes(app: FastifyInstance) {
+  // Executar scraper de concursos para todas as bancas (DEVE VIR ANTES DE /admin/bancas/:id)
+  app.post('/admin/bancas/scrape-all', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
+    try {
+      const { scrapeAllBancasContests } = await import('../services/contest-discovery-scraper.js');
+      const result = await scrapeAllBancasContests();
+      return { 
+        success: true, 
+        total_found: result.total, 
+        total_saved: result.saved,
+        message: `Scraping concluído! ${result.saved} novos concursos salvos de ${result.total} encontrados.`
+      };
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
+  // Executar scraper de uma banca específica
+  app.post('/admin/bancas/:id/scrape', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
+    try {
+      const { id } = request.params as any;
+      const { scrapeBancaContests, saveDiscoveredContests, updateBancaContestCount } = await import('../services/contest-discovery-scraper.js');
+      
+      const contests = await scrapeBancaContests(parseInt(id));
+      const saved = await saveDiscoveredContests(contests);
+      await updateBancaContestCount(parseInt(id));
+      
+      return { 
+        success: true, 
+        total_found: contests.length, 
+        total_saved: saved,
+        message: `Scraping concluído! ${saved} novos concursos salvos de ${contests.length} encontrados.`
+      };
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
   // Estatísticas gerais (DEVE VIR ANTES DE /admin/bancas/:id)
   app.get('/admin/bancas/stats', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
     try {

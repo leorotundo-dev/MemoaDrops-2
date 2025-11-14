@@ -44,12 +44,12 @@ const adminImportFgvRoutes: FastifyPluginAsync = async (fastify) => {
           [concurso] = await db('concursos')
             .where('id', concurso.id)
             .update({
-              name: concursoData.name || concurso.name,
+              name: concursoData.nome || concursoData.name || concurso.name,
               status: concursoData.status || concurso.status,
               descricao: concursoData.descricao || concurso.descricao,
               email: concursoData.email || concurso.email,
               telefone: concursoData.telefone || concurso.telefone,
-              fonte_url: concursoData.fonte_url || concurso.fonte_url,
+              fonte_url: concursoData.url || concursoData.fonte_url || concurso.fonte_url,
               scraped_at: db.fn.now(),
               updated_at: db.fn.now()
             })
@@ -61,13 +61,13 @@ const adminImportFgvRoutes: FastifyPluginAsync = async (fastify) => {
           [concurso] = await db('concursos')
             .insert({
               banca_id: bancaFgv.id,
-              name: concursoData.name,
+              name: concursoData.nome || concursoData.name,
               slug: concursoData.slug,
               status: concursoData.status || 'Em Andamento',
               descricao: concursoData.descricao,
               email: concursoData.email,
               telefone: concursoData.telefone,
-              fonte_url: concursoData.fonte_url,
+              fonte_url: concursoData.url || concursoData.fonte_url,
               scraped_at: db.fn.now()
             })
             .returning('*');

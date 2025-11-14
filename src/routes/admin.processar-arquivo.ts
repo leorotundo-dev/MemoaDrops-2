@@ -225,8 +225,8 @@ const adminProcessarArquivoRoutes: FastifyPluginAsync = async (fastify) => {
       // Buscar arquivos não processados
       let query = db('arquivos_concurso')
         .where('processado', false)
-        .where('categoria', categoria)
-        .whereRaw("url ILIKE '%.pdf'")
+        .where('tipo', 'pdf')
+        .whereRaw("(titulo ILIKE '%prova%' OR titulo ILIKE '%objetiva%' OR titulo ILIKE '%bloco%' OR titulo ILIKE '%questões%' OR titulo ILIKE '%questoes%' OR titulo ILIKE '%gabarito%')")
         .limit(limite);
       
       if (concurso_id) {

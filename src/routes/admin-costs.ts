@@ -89,7 +89,7 @@ export async function registerAdminCosts(app: FastifyInstance){
     const args:any[] = [env];
     let where = `WHERE env = $1`;
     if (from){ args.push(from); where += ` AND ts >= $${args.length}`; }
-    if (to){ args.push(to); where += ` AND ts < ($${args.length}+interval '1 day')`; }
+    if (to){ args.push(to); where += ` AND ts < ($${args.length}::date + interval '1 day')`; }
     const kpiSql = `SELECT ROUND(SUM(total_cost)::numeric,2) AS total_brl FROM cost_events ${where}`;
     const seriesSql = `
       SELECT date_trunc('day', ts)::date AS dt, SUM(total_cost) AS brl
@@ -109,7 +109,7 @@ export async function registerAdminCosts(app: FastifyInstance){
     const args:any[] = [env];
     let where = `WHERE env = $1`;
     if (from){ args.push(from); where += ` AND ts >= $${args.length}`; }
-    if (to){ args.push(to); where += ` AND ts < ($${args.length}+interval '1 day')`; }
+    if (to){ args.push(to); where += ` AND ts < ($${args.length}::date + interval '1 day')`; }
     const { rows } = await pool.query(`
       SELECT ${dim} AS key, ROUND(SUM(total_cost)::numeric,2) AS brl, COUNT(*) AS events
       FROM cost_events ${where}
@@ -124,7 +124,7 @@ export async function registerAdminCosts(app: FastifyInstance){
     const args:any[] = [env];
     let where = `WHERE env = $1`;
     if (from){ args.push(from); where += ` AND ts >= $${args.length}`; }
-    if (to){ args.push(to); where += ` AND ts < ($${args.length}+interval '1 day')`; }
+    if (to){ args.push(to); where += ` AND ts < ($${args.length}::date + interval '1 day')`; }
 
     // Exemplos: custo por card (feature=gerar_deck), por concurso (harvester), por usuário ativo (join externo necessário)
     if (metric === 'cost_per_card'){

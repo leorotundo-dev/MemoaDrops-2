@@ -57,7 +57,7 @@ export async function upsertContest(bancaId: number, externalId: string, data: a
       updated_at
     )
     VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), NOW())
-    ON CONFLICT (banca_id, external_id) 
+    ON CONFLICT (banca_id, external_id)
     DO UPDATE SET 
       name = EXCLUDED.name,
       contest_url = EXCLUDED.contest_url,

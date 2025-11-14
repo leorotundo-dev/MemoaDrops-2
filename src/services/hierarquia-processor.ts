@@ -60,6 +60,48 @@ export async function processHierarquiaForContest(
     console.log('[Hierarquia Processor] Extraindo hierarquia via GPT-4...');
     const hierarquia = await extractHierarquiaFromText(pdfText);
     
+    // 4.5. Extrair informações do concurso via GPT-4
+    console.log('[Hierarquia Processor] Extraindo informações do concurso via GPT-4...');
+    const { extractConcursoInfoFromText } = await import('./hierarquia-gpt-extractor.js');
+    const concursoInfo = await extractConcursoInfoFromText(pdfText);
+    
+    // Atualizar informações do concurso no banco
+    if (concursoInfo.confidence !== 'low') {
+      console.log('[Hierarquia Processor] Atualizando informações do concurso...');
+      await client.query(
+        `UPDATE concursos SET
+          orgao = COALESCE($2, orgao),
+          ano = COALESCE($3, ano),
+          nivel = COALESCE($4, nivel),
+          estado = COALESCE($5, estado),
+          cidade = COALESCE($6, cidade),
+          numero_vagas = COALESCE($7, numero_vagas),
+          salario_min = COALESCE($8, salario_min),
+          salario_max = COALESCE($9, salario_max),
+          data_inscricao_inicio = COALESCE($10, data_inscricao_inicio),
+          data_inscricao_fim = COALESCE($11, data_inscricao_fim),
+          data_prova = COALESCE($12, data_prova),
+          data_resultado = COALESCE($13, data_resultado)
+        WHERE id = $1`,
+        [
+          contestId,
+          concursoInfo.orgao,
+          concursoInfo.ano,
+          concursoInfo.nivel,
+          concursoInfo.estado,
+          concursoInfo.cidade,
+          concursoInfo.numero_vagas,
+          concursoInfo.salario_min,
+          concursoInfo.salario_max,
+          concursoInfo.data_inscricao_inicio,
+          concursoInfo.data_inscricao_fim,
+          concursoInfo.data_prova,
+          concursoInfo.data_resultado
+        ]
+      );
+      console.log('[Hierarquia Processor] Informações do concurso atualizadas com sucesso');
+    }
+    
     if (!hierarquia.materias || hierarquia.materias.length === 0) {
       console.log('[Hierarquia Processor] Nenhuma matéria encontrada');
       

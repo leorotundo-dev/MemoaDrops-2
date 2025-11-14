@@ -24,6 +24,22 @@ interface HierarquiaExtraida {
   confidence: 'low' | 'medium' | 'high';
 }
 
+interface ConcursoInfo {
+  orgao?: string;
+  ano?: number;
+  nivel?: string;
+  estado?: string;
+  cidade?: string;
+  numero_vagas?: number;
+  salario_min?: number;
+  salario_max?: number;
+  data_inscricao_inicio?: string;
+  data_inscricao_fim?: string;
+  data_prova?: string;
+  data_resultado?: string;
+  confidence: 'low' | 'medium' | 'high';
+}
+
 /**
  * Extrai hierarquia completa de matérias/tópicos/subtópicos de um texto de edital usando GPT-4
  */
@@ -134,4 +150,100 @@ export function generateSlug(text: string): string {
     .replace(/[\u0300-\u036f]/g, '') // Remove acentos
     .replace(/[^a-z0-9]+/g, '-') // Substitui caracteres especiais por hífen
     .replace(/^-+|-+$/g, ''); // Remove hífens no início e fim
+}
+
+/**
+ * Extrai informações gerais do concurso de um texto de edital usando GPT-4
+ */
+export async function extractConcursoInfoFromText(
+  pdfText: string
+): Promise<ConcursoInfo> {
+  try {
+    console.log('[Concurso Info GPT Extractor] Iniciando extração via GPT-4...');
+
+    const prompt = `Você é um especialista em análise de editais de concursos públicos brasileiros.
+
+Analise o texto do edital e extraia as seguintes informações do concurso:
+
+INFORMAÇÕES A EXTRAIR:
+1. **orgao**: Nome do órgão/instituição (ex: "Prefeitura Municipal de São Paulo", "Tribunal Regional do Trabalho")
+2. **ano**: Ano do concurso (número inteiro)
+3. **nivel**: Nível de escolaridade exigido (ex: "Superior", "Médio", "Fundamental", "Técnico")
+4. **estado**: Sigla do estado (ex: "SP", "RJ", "MG")
+5. **cidade**: Nome da cidade (ex: "São Paulo", "Rio de Janeiro")
+6. **numero_vagas**: Número total de vagas (número inteiro, soma de todas as vagas se houver múltiplos cargos)
+7. **salario_min**: Menor salário oferecido (número decimal, ex: 3500.50)
+8. **salario_max**: Maior salário oferecido (número decimal, ex: 15000.00)
+9. **data_inscricao_inicio**: Data de início das inscrições (formato: "YYYY-MM-DD")
+10. **data_inscricao_fim**: Data de fim das inscrições (formato: "YYYY-MM-DD")
+11. **data_prova**: Data da prova (formato: "YYYY-MM-DD")
+12. **data_resultado**: Data prevista do resultado (formato: "YYYY-MM-DD")
+
+REGRAS:
+- Se uma informação NÃO estiver claramente no texto, NÃO invente, deixe como null
+- Para datas, converta para formato ISO (YYYY-MM-DD)
+- Para salários, extraia apenas o valor numérico (sem "R$" ou pontos de milhar)
+- Se houver múltiplos cargos com salários diferentes, use o menor e o maior
+- Se houver apenas um salário, coloque o mesmo valor em salario_min e salario_max
+- Para nível, use apenas: "Superior", "Médio", "Fundamental", "Técnico", ou "Misto" se houver vários
+- Indique confidence: "high" se encontrou 80%+ das informações, "medium" se 50-79%, "low" se menos de 50%
+
+EXEMPLO DE JSON:
+{
+  "orgao": "Prefeitura Municipal de São Paulo",
+  "ano": 2025,
+  "nivel": "Superior",
+  "estado": "SP",
+  "cidade": "São Paulo",
+  "numero_vagas": 150,
+  "salario_min": 3500.00,
+  "salario_max": 15000.00,
+  "data_inscricao_inicio": "2025-07-01",
+  "data_inscricao_fim": "2025-07-31",
+  "data_prova": "2025-10-15",
+  "data_resultado": "2025-11-30",
+  "confidence": "high"
+}
+
+TEXTO DO EDITAL:
+${pdfText.substring(0, 15000)}
+
+Retorne APENAS JSON válido, sem explicações.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é um especialista em análise de editais de concursos públicos. Retorne apenas JSON válido.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.1,
+      max_tokens: 1000,
+      response_format: { type: 'json_object' },
+    });
+
+    const content = response.choices[0]?.message?.content;
+    
+    if (!content) {
+      console.log('[Concurso Info GPT Extractor] GPT-4 retornou resposta vazia');
+      return { confidence: 'low' };
+    }
+
+    console.log('[Concurso Info GPT Extractor] Resposta recebida do GPT-4');
+    console.log('[Concurso Info GPT Extractor] Resposta completa:', content);
+
+    const parsed: ConcursoInfo = JSON.parse(content);
+
+    console.log(`[Concurso Info GPT Extractor] Confidence: ${parsed.confidence}`);
+
+    return parsed;
+  } catch (error: any) {
+    console.error('[Concurso Info GPT Extractor] Erro:', error.message);
+    return { confidence: 'low' };
+  }
 }

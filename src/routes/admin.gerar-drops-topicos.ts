@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { pool } from '../db/connection.js';
-import { generateDropFromSubtopico } from '../services/drop-from-topic-generator-simple.js';
+import { generateDropFromSubtopico } from '../services/drop-from-topic-generator.js';
 
 export async function registerGerarDropsTopicosRoutes(fastify: FastifyInstance) {
   

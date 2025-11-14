@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
-import { db } from '../db';
+import { db } from '../db/index.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -130,10 +130,10 @@ const adminRunMigrationsRoutes: FastifyPluginAsync = async (fastify) => {
       .select('migration', 'executed_at')
       .orderBy('migration', 'asc');
 
-    const executedSet = new Set(executed.map(m => m.migration));
+    const executedSet = new Set(executed.map((m: any) => m.migration));
 
     const status = allMigrations.map(migration => {
-      const exec = executed.find(e => e.migration === migration);
+      const exec = executed.find((e: any) => e.migration === migration);
       return {
         migration,
         executada: executedSet.has(migration),

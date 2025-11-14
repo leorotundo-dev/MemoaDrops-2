@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
-import { db } from '../db';
+import { db } from '../db/index.js';
 
 /**
  * Rotas de importação de dados da FGV

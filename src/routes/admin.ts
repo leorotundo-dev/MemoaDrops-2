@@ -884,6 +884,33 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // ============================================
+  // PROCESSAR HIERARQUIA DE CONCURSO
+  // ============================================
+  app.post('/admin/contests/:id/process-hierarquia', async (req, reply) => {
+    const { id } = req.params as any;
+    const { editalUrl } = req.body as any;
+    
+    try {
+      // Importar dinamicamente para evitar problemas de dependência circular
+      const { processHierarquiaForContest } = await import('../services/hierarquia-processor.js');
+      
+      const result = await processHierarquiaForContest(id, editalUrl);
+      
+      return {
+        success: result.success,
+        materias: result.materiasCount,
+        topicos: result.topicosCount,
+        subtopicos: result.subtopicosCount,
+        subsubtopicos: result.subsubtopicosCount,
+        error: result.error
+      };
+    } catch (error: any) {
+      console.error('[Admin] Erro ao processar hierarquia:', error);
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+
+  // ============================================
   // BANCAS ORGANIZADORAS E SCRAPERS
   // ============================================
   // ENDPOINTS REMOVIDOS - Usar admin.bancas.ts e admin.scrapers.ts ao invés deste

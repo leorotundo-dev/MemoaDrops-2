@@ -154,13 +154,16 @@ IMPORTANTE: Retorne APENAS matérias que existem na lista fornecida. Se não tiv
       // Tentar encontrar matéria por ID primeiro
       let materia = materiasDisponiveis.find(m => m.id === c.materia_id);
       
-      // Se não encontrou por ID, tentar por nome (case-insensitive)
+      // Se não encontrou por ID, tentar por nome (normalizado)
       if (!materia && c.materia_nome) {
         console.log(`[Classificador] Matéria não encontrada por ID, tentando por nome: ${c.materia_nome}`);
-        materia = materiasDisponiveis.find(m => 
-          m.nome.toLowerCase().includes(c.materia_nome.toLowerCase()) ||
-          c.materia_nome.toLowerCase().includes(m.nome.toLowerCase())
-        );
+        const nomeNormalizado = c.materia_nome.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        materia = materiasDisponiveis.find(m => {
+          const mNormalizado = m.nome.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return mNormalizado === nomeNormalizado || 
+                 mNormalizado.includes(nomeNormalizado) ||
+                 nomeNormalizado.includes(mNormalizado);
+        });
         if (materia) {
           console.log(`[Classificador] Matéria encontrada por nome: ${materia.nome} (${materia.id})`);
           c.materia_id = materia.id; // Corrigir ID

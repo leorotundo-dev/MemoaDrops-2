@@ -134,25 +134,61 @@ Formato de saída (JSON):
     console.log(`[Classificador] Dados parseados:`, JSON.stringify(dados, null, 2));
     const classificacoes: ClassificacaoSugerida[] = dados.classificacoes || [];
     
-    // Validar classificações
+    // Validar e corrigir classificações (matching por nome se ID não bater)
     console.log(`[Classificador] Validando ${classificacoes.length} classificações...`);
-    const classificacoesValidas = classificacoes.filter(c => {
-      console.log(`[Classificador] Validando: materia_id=${c.materia_id}, topico_id=${c.topico_id}`);
+    const classificacoesValidas = classificacoes.map(c => {
+      console.log(`[Classificador] Validando: materia_id=${c.materia_id}, materia_nome=${c.materia_nome}`);
       
-      // Verificar se materia_id existe na lista
-      const materiaExiste = materiasDisponiveis.some(m => m.id === c.materia_id);
-      console.log(`[Classificador] Matéria existe? ${materiaExiste}`);
+      // Tentar encontrar matéria por ID primeiro
+      let materia = materiasDisponiveis.find(m => m.id === c.materia_id);
       
-      // Se tópico foi especificado, verificar se existe
-      if (c.topico_id) {
-        const materia = materiasDisponiveis.find(m => m.id === c.materia_id);
-        const topicoExiste = materia?.topicos?.some(t => t.id === c.topico_id);
-        console.log(`[Classificador] Tópico existe? ${topicoExiste}`);
-        return materiaExiste && topicoExiste;
+      // Se não encontrou por ID, tentar por nome (case-insensitive)
+      if (!materia && c.materia_nome) {
+        console.log(`[Classificador] Matéria não encontrada por ID, tentando por nome: ${c.materia_nome}`);
+        materia = materiasDisponiveis.find(m => 
+          m.nome.toLowerCase().includes(c.materia_nome.toLowerCase()) ||
+          c.materia_nome.toLowerCase().includes(m.nome.toLowerCase())
+        );
+        if (materia) {
+          console.log(`[Classificador] Matéria encontrada por nome: ${materia.nome} (${materia.id})`);
+          c.materia_id = materia.id; // Corrigir ID
+          c.materia_nome = materia.nome; // Corrigir nome
+        }
       }
       
-      return materiaExiste;
-    });
+      if (!materia) {
+        console.log(`[Classificador] Matéria não encontrada: ${c.materia_nome}`);
+        return null;
+      }
+      
+      // Se tópico foi especificado, validar
+      if (c.topico_id || c.topico_nome) {
+        let topico = materia.topicos?.find(t => t.id === c.topico_id);
+        
+        // Se não encontrou por ID, tentar por nome
+        if (!topico && c.topico_nome) {
+          console.log(`[Classificador] Tópico não encontrado por ID, tentando por nome: ${c.topico_nome}`);
+          topico = materia.topicos?.find(t => 
+            t.nome.toLowerCase().includes(c.topico_nome.toLowerCase()) ||
+            c.topico_nome.toLowerCase().includes(t.nome.toLowerCase())
+          );
+          if (topico) {
+            console.log(`[Classificador] Tópico encontrado por nome: ${topico.nome} (${topico.id})`);
+            c.topico_id = topico.id; // Corrigir ID
+            c.topico_nome = topico.nome; // Corrigir nome
+          }
+        }
+        
+        // Se tópico foi especificado mas não existe, remover da classificação
+        if (c.topico_id && !topico) {
+          console.log(`[Classificador] Tópico não encontrado, removendo da classificação`);
+          delete c.topico_id;
+          delete c.topico_nome;
+        }
+      }
+      
+      return c;
+    }).filter(c => c !== null) as ClassificacaoSugerida[];
     
     console.log(`[Classificador] Classificações válidas: ${classificacoesValidas.length}/${classificacoes.length}`);
     

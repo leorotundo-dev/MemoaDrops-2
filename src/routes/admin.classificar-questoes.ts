@@ -343,6 +343,28 @@ const adminClassificarQuestoesRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
   });
+  
+  /**
+   * POST /admin/questoes/:id/classificacoes
+   * Adiciona uma classificação manual
+   */
+  fastify.post('/admin/questoes/:id/classificacoes', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { materia_id, topico_id, relevancia } = request.body as any;
+    
+    try {
+      await db('questoes_materias').insert({
+        questao_id: id,
+        materia_id,
+        topico_id: topico_id || null,
+        relevancia: relevancia || 1.0
+      });
+      
+      return { sucesso: true };
+    } catch (error: any) {
+      return reply.status(500).send({ error: error.message });
+    }
+  });
 };
 
 export default adminClassificarQuestoesRoutes;

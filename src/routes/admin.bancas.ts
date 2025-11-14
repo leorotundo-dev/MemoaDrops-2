@@ -4,22 +4,6 @@ import { requireAdmin } from '../middleware/authorize.js';
 import { pool } from '../db/connection.js';
 
 export async function registerAdminBancaRoutes(app: FastifyInstance) {
-  // TEMPORÁRIO: Endpoint público para executar scraper (REMOVER DEPOIS!)
-  app.post('/public/scrape-all-bancas', async (_req, reply) => {
-    try {
-      const { scrapeAllBancasContests } = await import('../services/contest-discovery-scraper.js');
-      const result = await scrapeAllBancasContests();
-      return { 
-        success: true, 
-        total_found: result.total, 
-        total_saved: result.saved,
-        message: `Scraping concluído! ${result.saved} novos concursos salvos de ${result.total} encontrados.`
-      };
-    } catch (e: any) {
-      return reply.status(500).send({ error: e.message, stack: e.stack });
-    }
-  });
-
   // Executar scraper de concursos para todas as bancas (DEVE VIR ANTES DE /admin/bancas/:id)
   app.post('/admin/bancas/scrape-all', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
     try {

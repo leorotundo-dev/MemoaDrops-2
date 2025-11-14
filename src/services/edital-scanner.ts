@@ -28,7 +28,7 @@ export async function scanAllEditais(): Promise<ScanResult> {
 
   try {
     // Buscar todos os concursos que têm contest_url mas não têm matérias processadas
-    const concursos = await db.query(`
+    const concursos = await db.raw(`
       SELECT 
         c.id,
         c.nome,
@@ -121,7 +121,7 @@ export async function scanEditalsByBanca(bancaId: number): Promise<ScanResult> {
 
   try {
     // Buscar concursos da banca que não têm matérias processadas
-    const concursos = await db.query(`
+    const concursos = await db.raw(`
       SELECT 
         c.id,
         c.nome,
@@ -130,7 +130,7 @@ export async function scanEditalsByBanca(bancaId: number): Promise<ScanResult> {
         COUNT(m.id) as materias_count
       FROM concursos c
       LEFT JOIN materias m ON m.contest_id = c.id
-      WHERE c.banca_id = $1
+      WHERE c.banca_id = ?
         AND c.contest_url IS NOT NULL
       GROUP BY c.id, c.nome, c.contest_url, c.edital_url
       HAVING COUNT(m.id) = 0

@@ -2,6 +2,13 @@ import type { FastifyInstance } from 'fastify';
 import { Queue } from 'bullmq';
 import { scrapeQueue, vectorQueue } from '../jobs/queues.js';
 import { pool } from '../db/connection.js';
+import {
+  calcularProximaRevisao,
+  calcularQualidadeMedia,
+  verificarDominado,
+  calcularEstatisticas,
+  calcularDropsNovos
+} from '../services/sm2-algorithm.js';
 
 export async function adminRoutes(app: FastifyInstance) {
   
@@ -615,6 +622,247 @@ export async function adminRoutes(app: FastifyInstance) {
       ORDER BY table_name
     `);
     return { tables: rows.map(r => r.table_name) };
+  });
+
+  // ============================================
+  // DISTRIBUIÇÃO TEMPORAL DE DROPS (SM-2)
+  // ============================================
+
+  /**
+   * GET /drops/today
+   * Retorna drops do dia para o usuário (revisões + novos)
+   */
+  app.get('/drops/today', async (request, reply) => {
+    try {
+      // TODO: Pegar usuario_id do token de autenticação
+      // Por enquanto, usar um usuário padrão para testes
+      const { rows: usuarios } = await pool.query('SELECT id FROM usuarios LIMIT 1');
+      
+      if (usuarios.length === 0) {
+        return reply.status(404).send({ erro: 'Nenhum usuário encontrado' });
+      }
+      
+      const usuarioId = usuarios[0].id;
+      
+      // Buscar drops para revisar hoje
+      const { rows: dropsRevisar } = await pool.query(`
+        SELECT 
+          d.*,
+          ud.id as usuario_drop_id,
+          ud.numero_revisoes,
+          ud.status,
+          ud.proxima_revisao_em,
+          ud.easiness_factor,
+          ud.qualidade_media,
+          m.nome as materia_nome,
+          t.nome as topico_nome,
+          c.name as concurso_nome
+        FROM usuarios_drops ud
+        JOIN drops d ON d.id = ud.drop_id
+        LEFT JOIN materias m ON m.id = d.materia_id
+        LEFT JOIN topicos t ON t.id = d.topico_id
+        LEFT JOIN concursos c ON c.id = d.concurso_id
+        WHERE ud.usuario_id = $1
+          AND ud.proxima_revisao_em <= NOW()
+          AND ud.status != 'dominado'
+        ORDER BY ud.proxima_revisao_em ASC
+      `, [usuarioId]);
+      
+      const numRevisoes = dropsRevisar.length;
+      
+      // Calcular quantos drops novos introduzir
+      const numNovos = calcularDropsNovos(numRevisoes, 1.0);
+      
+      // Buscar drops novos (ainda não atribuídos ao usuário)
+      const { rows: dropsNovos } = await pool.query(`
+        SELECT 
+          d.*,
+          m.nome as materia_nome,
+          t.nome as topico_nome,
+          c.name as concurso_nome
+        FROM drops d
+        LEFT JOIN materias m ON m.id = d.materia_id
+        LEFT JOIN topicos t ON t.id = d.topico_id
+        LEFT JOIN concursos c ON c.id = d.concurso_id
+        WHERE d.id NOT IN (
+          SELECT drop_id FROM usuarios_drops WHERE usuario_id = $1
+        )
+        ORDER BY d.gerado_em DESC
+        LIMIT $2
+      `, [usuarioId, numNovos]);
+      
+      // Atribuir drops novos ao usuário
+      for (const drop of dropsNovos) {
+        await pool.query(`
+          INSERT INTO usuarios_drops (
+            usuario_id, drop_id, proxima_revisao_em, status
+          ) VALUES ($1, $2, NOW(), 'pendente')
+          ON CONFLICT (usuario_id, drop_id) DO NOTHING
+        `, [usuarioId, drop.id]);
+      }
+      
+      // Combinar drops de revisão e novos
+      const todosDrops = [
+        ...dropsRevisar.map(d => ({ ...d, tipo: 'revisao' })),
+        ...dropsNovos.map(d => ({ ...d, tipo: 'novo', numero_revisoes: 0, status: 'pendente' }))
+      ];
+      
+      return {
+        sucesso: true,
+        drops: todosDrops,
+        total: todosDrops.length,
+        novos: dropsNovos.length,
+        revisoes: dropsRevisar.length
+      };
+    } catch (error: any) {
+      console.error('Erro ao buscar drops do dia:', error);
+      return reply.status(500).send({ erro: error.message });
+    }
+  });
+
+  /**
+   * POST /drops/:id/revisar
+   * Registra revisão de um drop e atualiza algoritmo SM-2
+   */
+  app.post('/drops/:id/revisar', async (request, reply) => {
+    try {
+      const { id: dropId } = request.params as { id: string };
+      const { qualidade } = request.body as { qualidade: number };
+      
+      // Validar qualidade
+      if (qualidade < 0 || qualidade > 5) {
+        return reply.status(400).send({ erro: 'Qualidade deve estar entre 0 e 5' });
+      }
+      
+      // TODO: Pegar usuario_id do token de autenticação
+      const { rows: usuarios } = await pool.query('SELECT id FROM usuarios LIMIT 1');
+      if (usuarios.length === 0) {
+        return reply.status(404).send({ erro: 'Nenhum usuário encontrado' });
+      }
+      const usuarioId = usuarios[0].id;
+      
+      // Buscar registro atual do usuário para este drop
+      const { rows: [usuarioDrop] } = await pool.query(`
+        SELECT * FROM usuarios_drops
+        WHERE usuario_id = $1 AND drop_id = $2
+      `, [usuarioId, dropId]);
+      
+      if (!usuarioDrop) {
+        return reply.status(404).send({ erro: 'Drop não encontrado para este usuário' });
+      }
+      
+      // Calcular próxima revisão usando SM-2
+      const resultado = calcularProximaRevisao(
+        {
+          easiness_factor: usuarioDrop.easiness_factor,
+          intervalo_atual_dias: usuarioDrop.intervalo_atual_dias,
+          numero_revisoes: usuarioDrop.numero_revisoes
+        },
+        qualidade
+      );
+      
+      // Calcular nova qualidade média
+      const novaQualidadeMedia = calcularQualidadeMedia(
+        usuarioDrop.qualidade_media,
+        qualidade,
+        usuarioDrop.numero_revisoes
+      );
+      
+      // Verificar se dominou
+      const dominado = verificarDominado(
+        resultado.easinessFactor,
+        resultado.numeroRevisoes,
+        novaQualidadeMedia
+      );
+      
+      // Atualizar registro
+      await pool.query(`
+        UPDATE usuarios_drops SET
+          primeira_revisao_em = COALESCE(primeira_revisao_em, NOW()),
+          ultima_revisao_em = NOW(),
+          proxima_revisao_em = $1,
+          numero_revisoes = $2,
+          easiness_factor = $3,
+          intervalo_atual_dias = $4,
+          ultima_qualidade = $5,
+          qualidade_media = $6,
+          status = $7,
+          dominado_em = $8,
+          atualizado_em = NOW()
+        WHERE usuario_id = $9 AND drop_id = $10
+      `, [
+        resultado.proximaRevisao,
+        resultado.numeroRevisoes,
+        resultado.easinessFactor,
+        resultado.intervalo,
+        qualidade,
+        novaQualidadeMedia,
+        dominado ? 'dominado' : 'revisado',
+        dominado ? new Date() : null,
+        usuarioId,
+        dropId
+      ]);
+      
+      return {
+        sucesso: true,
+        proximo_intervalo_dias: resultado.intervalo,
+        proxima_revisao: resultado.proximaRevisao,
+        easiness_factor: resultado.easinessFactor,
+        numero_revisoes: resultado.numeroRevisoes,
+        qualidade_media: novaQualidadeMedia,
+        dominado
+      };
+    } catch (error: any) {
+      console.error('Erro ao revisar drop:', error);
+      return reply.status(500).send({ erro: error.message });
+    }
+  });
+
+  /**
+   * GET /drops/estatisticas
+   * Retorna estatísticas de progresso do usuário
+   */
+  app.get('/drops/estatisticas', async (request, reply) => {
+    try {
+      // TODO: Pegar usuario_id do token de autenticação
+      const { rows: usuarios } = await pool.query('SELECT id FROM usuarios LIMIT 1');
+      if (usuarios.length === 0) {
+        return reply.status(404).send({ erro: 'Nenhum usuário encontrado' });
+      }
+      const usuarioId = usuarios[0].id;
+      
+      // Buscar todos os drops do usuário
+      const { rows: drops } = await pool.query(`
+        SELECT status, qualidade_media
+        FROM usuarios_drops
+        WHERE usuario_id = $1
+      `, [usuarioId]);
+      
+      // Calcular estatísticas
+      const stats = calcularEstatisticas(drops);
+      
+      // Calcular sequência de dias (simplificado por enquanto)
+      const { rows: [sequencia] } = await pool.query(`
+        SELECT COUNT(DISTINCT DATE(ultima_revisao_em)) as dias_consecutivos
+        FROM usuarios_drops
+        WHERE usuario_id = $1
+          AND ultima_revisao_em >= NOW() - INTERVAL '7 days'
+      `, [usuarioId]);
+      
+      return {
+        sucesso: true,
+        total_drops: stats.total,
+        pendentes: stats.pendentes,
+        em_revisao: stats.emRevisao,
+        dominados: stats.dominados,
+        taxa_dominio: stats.taxaDominio,
+        qualidade_media_geral: stats.qualidadeMediaGeral,
+        sequencia_dias: sequencia?.dias_consecutivos || 0
+      };
+    } catch (error: any) {
+      console.error('Erro ao buscar estatísticas:', error);
+      return reply.status(500).send({ erro: error.message });
+    }
   });
 
   // ============================================

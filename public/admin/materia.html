@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes da Matéria - MemoDrops Admin</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 MemoDrops Admin</h1>
+            <nav class="breadcrumb">
+                <a href="/admin/">Concursos</a> →
+                <a href="#" id="contestLink">Concurso</a> →
+                <span id="materiaName">Matéria</span>
+            </nav>
+        </header>
+
+        <main>
+            <section id="materiaDetails" class="materia-details">
+                <div class="loading">Carregando detalhes...</div>
+            </section>
+
+            <section class="topicos-section">
+                <h2>📋 Tópicos</h2>
+                <div id="topicosList" class="topicos-list">
+                    <div class="loading">Carregando tópicos...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/materia.js"></script>
+</body>
+</html>

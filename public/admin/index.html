@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemoDrops Admin - Concursos</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 MemoDrops Admin</h1>
+            <p>Gerenciamento de Concursos e Matérias</p>
+        </header>
+
+        <main>
+            <section class="search-section">
+                <input type="text" id="searchInput" placeholder="Buscar concurso..." class="search-input">
+                <select id="bancaFilter" class="filter-select">
+                    <option value="">Todas as bancas</option>
+                </select>
+            </section>
+
+            <section id="contestsList" class="contests-grid">
+                <div class="loading">Carregando concursos...</div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/admin.js"></script>
+</body>
+</html>

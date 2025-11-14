@@ -376,17 +376,17 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Criar matéria
   app.post('/admin/subjects', async (req, reply) => {
-    const { name, slug } = req.body as any;
+    const { nome, slug } = req.body as any;
 
-    if (!name || !slug) {
+    if (!nome || !slug) {
       return reply.code(400).send({ error: 'missing_fields' });
     }
 
     const { rows: [subject] } = await pool.query(`
-      INSERT INTO materias (name, slug, created_at)
+      INSERT INTO materias (nome, slug, created_at)
       VALUES ($1, $2, NOW())
-      RETURNING id, name, slug, created_at
-    `, [name, slug]);
+      RETURNING id, nome, slug, created_at
+    `, [nome, slug]);
 
     return { subject };
   });
@@ -394,15 +394,15 @@ export async function adminRoutes(app: FastifyInstance) {
   // Atualizar matéria
   app.put('/admin/subjects/:id', async (req, reply) => {
     const { id } = req.params as any;
-    const { name, slug } = req.body as any;
+    const { nome, slug } = req.body as any;
 
     const { rows: [subject] } = await pool.query(`
       UPDATE materias
-      SET name = COALESCE($1, name),
+      SET nome = COALESCE($1, nome),
           slug = COALESCE($2, slug)
       WHERE id = $3
-      RETURNING id, name, slug, created_at
-    `, [name, slug, id]);
+      RETURNING id, nome, slug, created_at
+    `, [nome, slug, id]);
 
     if (!subject) {
       return reply.code(404).send({ error: 'subject_not_found' });

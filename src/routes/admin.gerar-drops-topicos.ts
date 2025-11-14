@@ -34,7 +34,7 @@ export async function registerGerarDropsTopicosRoutes(fastify: FastifyInstance) 
         SELECT 
           st.topico_id,
           t.materia_id,
-          m.contest_id
+          m.contest_id as concurso_id
         FROM subtopicos st
         JOIN topicos t ON st.topico_id = t.id
         JOIN materias m ON t.materia_id = m.id
@@ -45,7 +45,7 @@ export async function registerGerarDropsTopicosRoutes(fastify: FastifyInstance) 
         return reply.status(404).send({ error: 'Subtópico não encontrado' });
       }
       
-      const { topico_id, materia_id, contest_id } = subtopicoInfo.rows[0];
+      const { topico_id, materia_id, concurso_id } = subtopicoInfo.rows[0];
       
       // Salvar drop no banco
       const savedDrop = await pool.query(`
@@ -60,7 +60,7 @@ export async function registerGerarDropsTopicosRoutes(fastify: FastifyInstance) 
           tempo_estimado_minutos,
           materia_id,
           topico_id,
-          contest_id,
+          concurso_id,
           origem,
           fontes_utilizadas
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -76,7 +76,7 @@ export async function registerGerarDropsTopicosRoutes(fastify: FastifyInstance) 
         result.drop.tempo_estimado_minutos,
         materia_id,
         topico_id,
-        contest_id,
+        concurso_id,
         'subtopico',
         JSON.stringify(result.drop.fontes_utilizadas)
       ]);
@@ -157,14 +157,14 @@ export async function registerGerarDropsTopicosRoutes(fastify: FastifyInstance) 
             SELECT 
               st.topico_id,
               t.materia_id,
-              m.contest_id
+              m.contest_id as concurso_id
             FROM subtopicos st
             JOIN topicos t ON st.topico_id = t.id
             JOIN materias m ON t.materia_id = m.id
             WHERE st.id = $1
           `, [subtopico.id]);
           
-          const { topico_id, materia_id, contest_id } = subtopicoInfo.rows[0];
+          const { topico_id, materia_id, concurso_id } = subtopicoInfo.rows[0];
           
           // Salvar drop
           const savedDrop = await pool.query(`
@@ -179,7 +179,7 @@ export async function registerGerarDropsTopicosRoutes(fastify: FastifyInstance) 
               tempo_estimado_minutos,
               materia_id,
               topico_id,
-              contest_id,
+              concurso_id,
               origem,
               fontes_utilizadas
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -195,7 +195,7 @@ export async function registerGerarDropsTopicosRoutes(fastify: FastifyInstance) 
             result.drop.tempo_estimado_minutos,
             materia_id,
             topico_id,
-            contest_id,
+            concurso_id,
             'subtopico',
             JSON.stringify(result.drop.fontes_utilizadas)
           ]);

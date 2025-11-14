@@ -144,7 +144,19 @@ IMPORTANTE: Retorne APENAS matérias que existem na lista fornecida. Se não tiv
     // Parsear resposta JSON
     const dados = JSON.parse(resposta);
     console.log(`[Classificador] Dados parseados:`, JSON.stringify(dados, null, 2));
-    const classificacoes: ClassificacaoSugerida[] = dados.classificacoes || [];
+    let classificacoes: ClassificacaoSugerida[] = dados.classificacoes || [];
+    
+    // Se IA retornou array vazio, forçar classificação com primeira matéria
+    if (classificacoes.length === 0 && materiasDisponiveis.length > 0) {
+      console.log(`[Classificador] IA retornou array vazio no JSON, forçando classificação com primeira matéria`);
+      const materiaFallback = materiasDisponiveis[0];
+      classificacoes = [{
+        materia_id: materiaFallback.id,
+        materia_nome: materiaFallback.nome,
+        relevancia: 0.5,
+        justificativa: 'Classificação automática (fallback) - IA retornou array vazio'
+      }];
+    }
     
     // Validar e corrigir classificações (matching por nome se ID não bater)
     console.log(`[Classificador] Validando ${classificacoes.length} classificações...`);

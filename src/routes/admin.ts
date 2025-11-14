@@ -356,13 +356,13 @@ export async function adminRoutes(app: FastifyInstance) {
         d.titulo,
         d.conteudo,
         d.subtopico_id,
-        d.created_at
+        d.gerado_em as created_at
       FROM drops d
       JOIN subtopicos s ON d.subtopico_id = s.id
       JOIN topicos t ON s.topico_id = t.id
       JOIN materias m ON t.materia_id = m.id
       WHERE m.contest_id = $1
-      ORDER BY d.created_at DESC
+      ORDER BY d.gerado_em DESC
       LIMIT 10
     `, [id]);
 

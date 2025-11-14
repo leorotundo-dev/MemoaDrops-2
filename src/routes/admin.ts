@@ -327,7 +327,67 @@ export async function adminRoutes(app: FastifyInstance) {
       ORDER BY nome ASC
     `, [id]);
 
-    return { data: { ...contest, materias } };
+    // Buscar hierarquia completa (tópicos e subtópicos)
+    for (const materia of materias) {
+      const { rows: topicos } = await pool.query(`
+        SELECT id, nome, created_at
+        FROM topicos
+        WHERE materia_id = $1
+        ORDER BY nome ASC
+      `, [materia.id]);
+
+      for (const topico of topicos) {
+        const { rows: subtopicos } = await pool.query(`
+          SELECT id, nome, created_at
+          FROM subtopicos
+          WHERE topico_id = $1
+          ORDER BY nome ASC
+        `, [topico.id]);
+        topico.subtopicos = subtopicos;
+      }
+
+      materia.topicos = topicos;
+    }
+
+    // Buscar drops do concurso (via subtópicos)
+    const { rows: drops } = await pool.query(`
+      SELECT 
+        d.id,
+        d.titulo,
+        d.conteudo,
+        d.subtopico_id,
+        d.created_at
+      FROM drops d
+      JOIN subtopicos s ON d.subtopico_id = s.id
+      JOIN topicos t ON s.topico_id = t.id
+      JOIN materias m ON t.materia_id = m.id
+      WHERE m.contest_id = $1
+      ORDER BY d.created_at DESC
+      LIMIT 10
+    `, [id]);
+
+    // Calcular estatísticas
+    const { rows: [stats] } = await pool.query(`
+      SELECT 
+        COUNT(DISTINCT m.id)::int as total_materias,
+        COUNT(DISTINCT t.id)::int as total_topicos,
+        COUNT(DISTINCT s.id)::int as total_subtopicos,
+        COUNT(DISTINCT d.id)::int as total_drops
+      FROM materias m
+      LEFT JOIN topicos t ON t.materia_id = m.id
+      LEFT JOIN subtopicos s ON s.topico_id = t.id
+      LEFT JOIN drops d ON d.subtopico_id = s.id
+      WHERE m.contest_id = $1
+    `, [id]);
+
+    return { 
+      data: { 
+        ...contest, 
+        materias,
+        drops,
+        stats: stats || { total_materias: 0, total_topicos: 0, total_subtopicos: 0, total_drops: 0 }
+      } 
+    };
   });
 
   // Criar concurso

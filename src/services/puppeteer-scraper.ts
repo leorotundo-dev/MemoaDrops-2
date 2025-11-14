@@ -62,9 +62,10 @@ export async function scrapeBancaContestsWithPuppeteer(
     const bancaSelectors: Record<string, string> = {
       'cebraspe': 'a',  // Vamos filtrar por texto no evaluate
       'cesgranrio': 'a[href*="concurso"], .concurso a, a[href*="edital"]',
-      'ibfc': 'a[href*="concurso"], .card a, a[href*="edital"]',
+      'ibfc': 'a[href*="concurso"], .card a, a[href*="edital"], a[href*="ibfc.org.br"]',
       'aocp': 'a[href*="concurso"], .concurso-item a, a[href*="edital"]',
       'vunesp': 'a[href*="concurso"], .card a, a[href*="vunesp.com.br"]',
+      'idecan': 'a[href*="concurso"], .card a, a[href*="edital"], a[href*="idecan.org.br"]',
     };
 
     const selector = bancaSelectors[bancaName.toLowerCase()] || 'a[href*="concurso"]';

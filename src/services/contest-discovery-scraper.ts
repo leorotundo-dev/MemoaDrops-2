@@ -38,6 +38,7 @@ const BANCA_CONTEST_URLS: Record<string, string> = {
   'ufpr': 'https://servicos.nc.ufpr.br/PortalNC/ConcursosAndamento?ano=2025',
   'fundatec': 'https://www.fundatec.org.br/portal/concursos/concursos_abertos.php',
   'ibade': 'https://portal.ibade.selecao.site/edital',
+  'idecan': 'https://concurso.idecan.org.br/',
 };
 
 /**
@@ -66,7 +67,7 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
     }
 
     // Bancas que requerem Puppeteer (bloqueiam HTTP normal ou usam JavaScript dinâmico)
-    const puppeteerBancas = ['cesgranrio', 'ibfc', 'aocp', 'vunesp', 'cebraspe'];
+    const puppeteerBancas = ['cesgranrio', 'ibfc', 'aocp', 'vunesp', 'cebraspe', 'idecan'];
     
     if (puppeteerBancas.includes(banca.name.toLowerCase())) {
       console.log(`[Contest Discovery] Usando Puppeteer para ${banca.name}`);

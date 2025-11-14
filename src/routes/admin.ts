@@ -984,6 +984,33 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // ============================================
+  // VARREDURA DE EDITAIS
+  // ============================================
+  app.post('/admin/editais/scan-all', async (req, reply) => {
+    try {
+      const { scanAllEditais } = await import('../services/edital-scanner.js');
+      const result = await scanAllEditais();
+      return result;
+    } catch (error: any) {
+      console.error('[Admin] Erro ao varrer editais:', error);
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+
+  app.post('/admin/editais/scan-banca/:bancaId', async (req, reply) => {
+    const { bancaId } = req.params as any;
+    
+    try {
+      const { scanEditalsByBanca } = await import('../services/edital-scanner.js');
+      const result = await scanEditalsByBanca(parseInt(bancaId));
+      return result;
+    } catch (error: any) {
+      console.error('[Admin] Erro ao varrer editais da banca:', error);
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+
+  // ============================================
   // BANCAS ORGANIZADORAS E SCRAPERS
   // ============================================
   // ENDPOINTS REMOVIDOS - Usar admin.bancas.ts e admin.scrapers.ts ao invés deste

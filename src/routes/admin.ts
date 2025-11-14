@@ -629,6 +629,32 @@ export async function adminRoutes(app: FastifyInstance) {
   // ============================================
 
   /**
+   * GET /test-sm2
+   * Endpoint de teste para verificar se o algoritmo SM-2 está funcionando
+   */
+  app.get('/test-sm2', async (request, reply) => {
+    try {
+      const userData = {
+        easiness_factor: 2.5,
+        intervalo_atual_dias: 1,
+        numero_revisoes: 0
+      };
+      
+      const resultado = calcularProximaRevisao(userData, 5);
+      
+      return {
+        sucesso: true,
+        input: userData,
+        output: resultado,
+        tipo_proxima_revisao: typeof resultado.proximaRevisao,
+        proxima_revisao_string: String(resultado.proximaRevisao)
+      };
+    } catch (error: any) {
+      return reply.status(500).send({ erro: error.message, stack: error.stack });
+    }
+  });
+
+  /**
    * GET /drops/today
    * Retorna drops do dia para o usuário (revisões + novos)
    */

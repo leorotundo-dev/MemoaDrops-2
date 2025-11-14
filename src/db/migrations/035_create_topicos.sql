@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS topicos (
   slug VARCHAR(255) NOT NULL,
   descricao TEXT,
   
-  -- Hierarquia (self-referencing)
-  parent_id UUID REFERENCES topicos(id) ON DELETE CASCADE,
+  -- Hierarquia (self-referencing) - será adicionado depois
+  parent_id UUID,
   nivel INTEGER DEFAULT 1,  -- 1=tópico, 2=subtópico, 3=sub-subtópico
   ordem INTEGER DEFAULT 0,
   
@@ -19,6 +19,18 @@ CREATE TABLE IF NOT EXISTS topicos (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Adicionar FK self-referencing depois que a tabela existe
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'topicos_parent_id_fkey'
+  ) THEN
+    ALTER TABLE topicos ADD CONSTRAINT topicos_parent_id_fkey 
+      FOREIGN KEY (parent_id) REFERENCES topicos(id) ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- Índices para performance
 CREATE INDEX IF NOT EXISTS idx_topicos_materia ON topicos(materia_id);

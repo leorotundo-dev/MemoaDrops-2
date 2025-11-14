@@ -70,7 +70,7 @@ export async function adminRoutes(app: FastifyInstance) {
     const stats: any = {
       users: { total: 0, active_dau: 0, active_mau: 0 },
       finance: { mrr: 0, total_cost: 0, costs_by_category: {}, costs_by_service: [] },
-      content: { contests: 0, subjects: 0, public_decks: 0, public_cards: 0 },
+      content: { contests: 0, subjects: 0, topicos: 0, subtopicos: 0, drops: 0, public_decks: 0, public_cards: 0 },
       system: { api_status: 'healthy', db_status: 'healthy', active_jobs: 0, failed_jobs: 0 }
     };
 
@@ -156,20 +156,33 @@ export async function adminRoutes(app: FastifyInstance) {
       // Tabela materias não existe
     }
 
+    // Adicionar contagem de tópicos
     try {
-      const { rows: [publicDecks] } = await pool.query('SELECT COUNT(*)::int AS public_decks FROM decks WHERE is_public = true');
-      stats.content.public_decks = publicDecks?.public_decks || 0;
-
-      const { rows: [publicCards] } = await pool.query(`
-        SELECT COUNT(*)::int AS public_cards 
-        FROM cards c 
-        JOIN decks d ON c.deck_id = d.id 
-        WHERE d.is_public = true
-      `);
-      stats.content.public_cards = publicCards?.public_cards || 0;
+      const { rows: [topicos] } = await pool.query('SELECT COUNT(*)::int AS topicos FROM topicos');
+      stats.content.topicos = topicos?.topicos || 0;
     } catch (e) {
-      // Tabelas decks/cards não existem
+      // Tabela topicos não existe
     }
+
+    // Adicionar contagem de subtópicos
+    try {
+      const { rows: [subtopicos] } = await pool.query('SELECT COUNT(*)::int AS subtopicos FROM subtopicos');
+      stats.content.subtopicos = subtopicos?.subtopicos || 0;
+    } catch (e) {
+      // Tabela subtopicos não existe
+    }
+
+    // Adicionar contagem de drops
+    try {
+      const { rows: [drops] } = await pool.query('SELECT COUNT(*)::int AS drops FROM drops');
+      stats.content.drops = drops?.drops || 0;
+    } catch (e) {
+      // Tabela drops não existe
+    }
+
+    // Remover contagem de decks/cards (não usados no sistema atual)
+    stats.content.public_decks = 0;
+    stats.content.public_cards = 0;
 
     // Sistema - Jobs
     try {

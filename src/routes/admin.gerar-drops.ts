@@ -24,7 +24,7 @@ const adminGerarDropsRoutes: FastifyPluginAsync = async (fastify) => {
         .leftJoin('concursos', 'questoes.concurso_id', 'concursos.id')
         .select(
           'questoes.*',
-          'concursos.nome as concurso_nome'
+          'concursos.name as concurso_nome'
         )
         .first();
       
@@ -347,7 +347,7 @@ const adminGerarDropsRoutes: FastifyPluginAsync = async (fastify) => {
           'questoes.enunciado as questao_enunciado',
           'materias.nome as materia_nome',
           'topicos.nome as topico_nome',
-          'concursos.nome as concurso_nome'
+          'concursos.name as concurso_nome'
         )
         .first();
       

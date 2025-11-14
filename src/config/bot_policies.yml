@@ -1,0 +1,5 @@
+obey_robots: true
+requests_per_second: 1
+jitter_ms: 300
+backoff_403_429_hours: 24
+allow_headless_default: false

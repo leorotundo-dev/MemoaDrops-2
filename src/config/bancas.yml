@@ -1,0 +1,56 @@
+defaults:
+  user_agent: MemoDropsHarvester/1.0
+  timeout_ms: 20000
+  retries: 1
+  sleep_ms_between: 700
+
+bancas:
+  - id: cebraspe
+    label: Cebraspe
+    base: https://www.cebraspe.org.br/concursos/
+    render_mode: static
+
+  - id: fgv
+    label: FGV Conhecimento
+    base: https://conhecimento.fgv.br/concursos
+    render_mode: static
+
+  - id: vunesp
+    label: Vunesp
+    base: https://www.vunesp.com.br/
+    render_mode: static
+
+  - id: fcc
+    label: Fundação Carlos Chagas
+    base: https://www.fcc.org.br/concursos/
+    render_mode: headless
+
+  - id: ibfc
+    label: IBFC
+    base: https://concursos.ibfc.org.br/
+    render_mode: static
+
+  - id: aocp
+    label: AOCP
+    base: https://www.institutoaocp.org.br/
+    render_mode: static
+
+  - id: idecan
+    label: Idecan
+    base: https://idecan.org.br/
+    render_mode: static
+
+  - id: quadrix
+    label: Quadrix
+    base: https://site.quadrix.org.br/todos-os-concursos.aspx
+    render_mode: static
+
+  - id: ibade
+    label: IBADE
+    base: https://ibade.org.br/concursos/
+    render_mode: static
+
+  - id: fundatec
+    label: Fundatec
+    base: https://fundatec.org.br/portal/concursos/
+    render_mode: static

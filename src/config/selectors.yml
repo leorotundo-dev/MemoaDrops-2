@@ -1,0 +1,60 @@
+# Ajuste fino por domínio quando necessário (ex.: quando <a> genéricos pegar demais)
+cebraspe:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso|Processo Seletivo"
+
+fgv:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso"
+
+vunesp:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso|Vestibular|Avalia"
+
+fcc:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso|Edital|Prova"
+
+ibfc:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso|Inscri"
+
+aocp:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso|Seleção"
+
+idecan:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso|Edital|Sele"
+
+quadrix:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso|Seleção"
+
+ibade:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso|Edital|Inscri"
+
+fundatec:
+  item: "a"
+  title: "text"
+  href: "href"
+  filter_text: "Concurso|Processo"

@@ -69,6 +69,7 @@ import adminArquivosRoutes from './routes/admin.arquivos.js';
 import adminQuestoesRoutes from './routes/admin.questoes.js';
 import adminImportFgvRoutes from './routes/admin.import-fgv.js';
 import adminRunMigrationsRoutes from './routes/admin.run-migrations.js';
+import adminExecSqlRoutes from './routes/admin.exec-sql.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -195,6 +196,7 @@ await app.register(adminArquivosRoutes);
 await app.register(adminQuestoesRoutes);
 await app.register(adminImportFgvRoutes);
 await app.register(adminRunMigrationsRoutes);
+await app.register(adminExecSqlRoutes);
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

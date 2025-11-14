@@ -172,8 +172,17 @@ IMPORTANTE: Retorne APENAS matérias que existem na lista fornecida. Se não tiv
       }
       
       if (!materia) {
-        console.log(`[Classificador] Matéria não encontrada: ${c.materia_nome}`);
-        return null;
+        console.log(`[Classificador] Matéria não encontrada: ${c.materia_nome}, usando primeira matéria disponível como fallback`);
+        // Fallback: usar primeira matéria disponível
+        materia = materiasDisponiveis[0];
+        if (materia) {
+          c.materia_id = materia.id;
+          c.materia_nome = materia.nome;
+          console.log(`[Classificador] Usando fallback: ${materia.nome} (${materia.id})`);
+        } else {
+          console.log(`[Classificador] Nenhuma matéria disponível, descartando classificação`);
+          return null;
+        }
       }
       
       // Se tópico foi especificado, validar

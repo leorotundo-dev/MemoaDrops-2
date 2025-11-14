@@ -44,11 +44,19 @@ export function sha256(s: string) {
 export async function upsertContest(bancaId: number, externalId: string, data: any) {
   const { title, url, status, raw } = data;
   
+  // Gerar slug a partir do título
+  const slug = title
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[^a-z0-9]+/g, '-') // Substitui não-alfanuméricos por -
+    .replace(/^-+|-+$/g, ''); // Remove - do início/fim
+  
   await pool.query(`
     INSERT INTO concursos (
       banca_id, 
       external_id, 
       name, 
+      slug,
       contest_url, 
       status, 
       informacoes_scraper, 
@@ -56,7 +64,7 @@ export async function upsertContest(bancaId: number, externalId: string, data: a
       created_at, 
       updated_at
     )
-    VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW(), NOW())
+    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), NOW())
     ON CONFLICT (banca_id, external_id)
     DO UPDATE SET 
       name = EXCLUDED.name,
@@ -65,7 +73,7 @@ export async function upsertContest(bancaId: number, externalId: string, data: a
       informacoes_scraper = COALESCE(EXCLUDED.informacoes_scraper, concursos.informacoes_scraper),
       scraped_at = NOW(),
       updated_at = NOW()
-  `, [bancaId, externalId, title, url, status || 'descoberto', raw || {}]);
+  `, [bancaId, externalId, title, slug, url, status || 'descoberto', raw || {}]);
 }
 
 /**

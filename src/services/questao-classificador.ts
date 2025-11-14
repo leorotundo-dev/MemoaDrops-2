@@ -205,8 +205,8 @@ IMPORTANTE: Retorne APENAS matérias que existem na lista fornecida. Se não tiv
         if (!topico && c.topico_nome) {
           console.log(`[Classificador] Tópico não encontrado por ID, tentando por nome: ${c.topico_nome}`);
           topico = materia.topicos?.find(t => 
-            t.nome.toLowerCase().includes(c.topico_nome.toLowerCase()) ||
-            c.topico_nome.toLowerCase().includes(t.nome.toLowerCase())
+            t.nome.toLowerCase().includes(c.topico_nome?.toLowerCase() || '') ||
+            (c.topico_nome?.toLowerCase() || '').includes(t.nome.toLowerCase())
           );
           if (topico) {
             console.log(`[Classificador] Tópico encontrado por nome: ${topico.nome} (${topico.id})`);

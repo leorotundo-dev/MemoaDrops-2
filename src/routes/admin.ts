@@ -759,11 +759,6 @@ export async function adminRoutes(app: FastifyInstance) {
       const intervaloAtual = parseInt(usuarioDrop.intervalo_atual_dias) || 1;
       const numRevisoes = parseInt(usuarioDrop.numero_revisoes) || 0;
       
-        easiness_factor: easinessFactor,
-        intervalo_atual_dias: intervaloAtual,
-        numero_revisoes: numRevisoes
-      });
-      
       const resultado = calcularProximaRevisao(
         {
           easiness_factor: easinessFactor,

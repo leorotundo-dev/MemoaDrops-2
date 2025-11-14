@@ -71,7 +71,7 @@ import adminQuestoesRoutes from './routes/admin.questoes.js';
 import adminImportFgvRoutes from './routes/admin.import-fgv.js';
 import adminProcessarArquivoRoutes from './routes/admin.processar-arquivo.js';
 import adminClassificarQuestoesRoutes from './routes/admin.classificar-questoes.js';
-import adminGerarDropsRoutes from './routes/admin.gerar-drops.js';
+// import adminGerarDropsRoutes from './routes/admin.gerar-drops.js'; // REMOVIDO - duplicado com admin.gerar-drops-topicos.ts
 import adminRunMigrationsRoutes from './routes/admin.run-migrations.js';
 import adminExecSqlRoutes from './routes/admin.exec-sql.js';
 import { registerTutorRoutes } from './routes/tutor.js';
@@ -207,7 +207,7 @@ await app.register(adminQuestoesRoutes);
 await app.register(adminImportFgvRoutes);
 await app.register(adminProcessarArquivoRoutes);
 await app.register(adminClassificarQuestoesRoutes);
-await app.register(adminGerarDropsRoutes);
+// await app.register(adminGerarDropsRoutes); // REMOVIDO - duplicado com admin.gerar-drops-topicos.ts
 await registerAdminCosts(app);
 await registerAdminBancasReviews(app);
 await registerAdminBancasMetrics(app);

@@ -77,6 +77,7 @@ import { registerTutorRoutes } from './routes/tutor.js';
 import { registerAdminCosts } from './routes/admin-costs.js';
 import { registerAdminBancasReviews } from './routes/admin-bancas-reviews.js';
 import { registerAdminBancasMetrics } from './routes/admin-bancas-metrics.js';
+import { adminScrapersRoutes } from './routes/admin-scrapers.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -208,6 +209,7 @@ await app.register(adminGerarDropsRoutes);
 await registerAdminCosts(app);
 await registerAdminBancasReviews(app);
 await registerAdminBancasMetrics(app);
+await app.register(adminScrapersRoutes);
 await app.register(adminRunMigrationsRoutes);
 await app.register(adminExecSqlRoutes);
 await registerTutorRoutes(app);

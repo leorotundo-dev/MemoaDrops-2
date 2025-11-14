@@ -4,6 +4,25 @@ import { requireAdmin } from '../middleware/authorize.js';
 import { pool } from '../db/connection.js';
 
 export async function registerAdminBancaRoutes(app: FastifyInstance) {
+  // Estatísticas gerais (DEVE VIR ANTES DE /admin/bancas/:id)
+  app.get('/admin/bancas/stats', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
+    try {
+      const { rows: [stats] } = await pool.query(`
+        SELECT COUNT(*)::int AS total,
+               SUM(CASE WHEN is_active THEN 1 ELSE 0 END)::int AS active,
+               COALESCE(SUM(total_contests),0)::int AS total_contests
+        FROM bancas`);
+      const { rows: [top] } = await pool.query(`
+        SELECT display_name, total_contests
+        FROM bancas WHERE total_contests > 0
+        ORDER BY total_contests DESC
+        LIMIT 1`);
+      return { ...stats, top_banca: top || null };
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
   // Listar bancas
   app.get('/admin/bancas', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
     try {
@@ -84,6 +103,21 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
     }
   });
 
+  // Detalhes (DEVE VIR DEPOIS DE /admin/bancas/stats)
+  app.get('/admin/bancas/:id', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
+    try {
+      const { id } = request.params as any;
+      const { rows: [banca] } = await pool.query(`
+        SELECT b.*
+        FROM bancas b
+        WHERE b.id=$1`, [id]);
+      if (!banca) return reply.status(404).send({ error: 'Banca not found' });
+      return banca;
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
   // Atualizar banca
   app.put('/admin/bancas/:id', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
     try {
@@ -117,40 +151,6 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
       const { rows: [banca] } = await pool.query('DELETE FROM bancas WHERE id=$1 RETURNING *', [id]);
       if (!banca) return reply.status(404).send({ error: 'Banca not found' });
       return { message: 'Banca deleted successfully', banca };
-    } catch (e: any) {
-      return reply.status(500).send({ error: e.message });
-    }
-  });
-
-  // Detalhes
-  app.get('/admin/bancas/:id', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
-    try {
-      const { id } = request.params as any;
-      const { rows: [banca] } = await pool.query(`
-        SELECT b.*
-        FROM bancas b
-        WHERE b.id=$1`, [id]);
-      if (!banca) return reply.status(404).send({ error: 'Banca not found' });
-      return banca;
-    } catch (e: any) {
-      return reply.status(500).send({ error: e.message });
-    }
-  });
-
-  // Estatísticas gerais
-  app.get('/admin/bancas/stats', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
-    try {
-      const { rows: [stats] } = await pool.query(`
-        SELECT COUNT(*)::int AS total,
-               SUM(CASE WHEN is_active THEN 1 ELSE 0 END)::int AS active,
-               COALESCE(SUM(total_contests),0)::int AS total_contests
-        FROM bancas`);
-      const { rows: [top] } = await pool.query(`
-        SELECT display_name, total_contests
-        FROM bancas WHERE total_contests > 0
-        ORDER BY total_contests DESC
-        LIMIT 1`);
-      return { ...stats, top_banca: top || null };
     } catch (e: any) {
       return reply.status(500).send({ error: e.message });
     }

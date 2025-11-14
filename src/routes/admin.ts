@@ -778,17 +778,22 @@ export async function adminRoutes(app: FastifyInstance) {
       }
       
       // Calcular próxima revisão usando SM-2
-      console.log('[DEBUG] Usuario Drop:', {
-        easiness_factor: usuarioDrop.easiness_factor,
-        intervalo_atual_dias: usuarioDrop.intervalo_atual_dias,
-        numero_revisoes: usuarioDrop.numero_revisoes
+      // Garantir valores padrão caso sejam null
+      const easinessFactor = parseFloat(usuarioDrop.easiness_factor) || 2.5;
+      const intervaloAtual = parseInt(usuarioDrop.intervalo_atual_dias) || 1;
+      const numRevisoes = parseInt(usuarioDrop.numero_revisoes) || 0;
+      
+      console.log('[DEBUG] Usuario Drop (parsed):', {
+        easiness_factor: easinessFactor,
+        intervalo_atual_dias: intervaloAtual,
+        numero_revisoes: numRevisoes
       });
       
       const resultado = calcularProximaRevisao(
         {
-          easiness_factor: usuarioDrop.easiness_factor,
-          intervalo_atual_dias: usuarioDrop.intervalo_atual_dias,
-          numero_revisoes: usuarioDrop.numero_revisoes
+          easiness_factor: easinessFactor,
+          intervalo_atual_dias: intervaloAtual,
+          numero_revisoes: numRevisoes
         },
         qualidade
       );

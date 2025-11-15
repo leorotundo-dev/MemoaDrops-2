@@ -136,28 +136,48 @@ export async function validatePdfUrl(url: string): Promise<{ valid: boolean; mes
 
     const html = response.data;
     
-    // Procurar links de PDF no HTML
-    const pdfLinkRegex = /href=["']([^"']*\.pdf[^"']*)["']/gi;
+    // Procurar links de PDF no HTML com contexto (para filtrar editais de abertura)
+    const pdfLinkRegex = /<a[^>]*href=["']([^"']*\.pdf[^"']*)["'][^>]*>([^<]*)</gi;
     const matches = [...html.matchAll(pdfLinkRegex)];
     
     if (matches.length > 0) {
-      // Pegar o primeiro link de PDF encontrado
-      let pdfUrl = matches[0][1];
+      // Priorizar links com "Edital" e "Abertura" no texto
+      let pdfUrl = null;
       
-      // Construir URL completa se for relativa
-      if (!pdfUrl.startsWith('http')) {
-        const baseUrl = new URL(url);
-        pdfUrl = new URL(pdfUrl, baseUrl.origin).toString();
+      for (const match of matches) {
+        const linkUrl = match[1];
+        const linkText = match[2].toLowerCase();
+        
+        // Priorizar "Edital nº 1 - Abertura" ou similar
+        if (linkText.includes('edital') && linkText.includes('abertura') && !linkText.includes('acessível') && !linkText.includes('vlibras')) {
+          pdfUrl = linkUrl;
+          console.log(`[Edital Validator] Encontrado edital de abertura: "${match[2]}"`);
+          break;
+        }
       }
+      
+      // Se não encontrou edital de abertura, pegar o primeiro PDF
+      if (!pdfUrl && matches.length > 0) {
+        pdfUrl = matches[0][1];
+        console.log(`[Edital Validator] Usando primeiro PDF encontrado`);
+      }
+      
+      if (pdfUrl) {
+        // Construir URL completa se for relativa
+        if (!pdfUrl.startsWith('http')) {
+          const baseUrl = new URL(url);
+          pdfUrl = new URL(pdfUrl, baseUrl.origin).toString();
+        }
 
-      // Validar o PDF encontrado
-      const pdfValidation = await validatePdfUrl(pdfUrl);
-      if (pdfValidation.valid) {
-        return {
-          valid: true,
-          message: 'PDF encontrado na página',
-          pdfUrl: pdfUrl,
-        };
+        // Validar o PDF encontrado
+        const pdfValidation = await validatePdfUrl(pdfUrl);
+        if (pdfValidation.valid) {
+          return {
+            valid: true,
+            message: 'PDF encontrado na página',
+            pdfUrl: pdfUrl,
+          };
+        }
       }
     }
 

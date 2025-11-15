@@ -31,14 +31,14 @@ export async function scanAllEditais(): Promise<ScanResult> {
     const concursos = await db.raw(`
       SELECT 
         c.id,
-        c.nome,
+        c.name,
         c.contest_url,
         c.edital_url,
         COUNT(m.id) as materias_count
       FROM concursos c
       LEFT JOIN materias m ON m.contest_id = c.id
       WHERE c.contest_url IS NOT NULL
-      GROUP BY c.id, c.nome, c.contest_url, c.edital_url
+      GROUP BY c.id, c.name, c.contest_url, c.edital_url
       HAVING COUNT(m.id) = 0
       ORDER BY c.created_at DESC
     `);
@@ -51,7 +51,7 @@ export async function scanAllEditais(): Promise<ScanResult> {
     for (const concurso of concursos.rows) {
       const editalUrl = concurso.edital_url || concurso.contest_url;
       
-      console.log(`[Edital Scanner] Processando: ${concurso.nome}`);
+      console.log(`[Edital Scanner] Processando: ${concurso.name}`);
       console.log(`[Edital Scanner] URL: ${editalUrl}`);
 
       try {
@@ -65,29 +65,29 @@ export async function scanAllEditais(): Promise<ScanResult> {
           result.processed++;
           result.results.push({
             concursoId: concurso.id,
-            concursoNome: concurso.nome,
+            concursoNome: concurso.name,
             status: 'success'
           });
-          console.log(`[Edital Scanner] ✅ Sucesso: ${concurso.nome}`);
+          console.log(`[Edital Scanner] ✅ Sucesso: ${concurso.name}`);
         } else {
           result.failed++;
           result.results.push({
             concursoId: concurso.id,
-            concursoNome: concurso.nome,
+            concursoNome: concurso.name,
             status: 'failed',
             error: processResult.error
           });
-          console.log(`[Edital Scanner] ❌ Falha: ${concurso.nome} - ${processResult.error}`);
+          console.log(`[Edital Scanner] ❌ Falha: ${concurso.name} - ${processResult.error}`);
         }
       } catch (error: any) {
         result.failed++;
         result.results.push({
           concursoId: concurso.id,
-          concursoNome: concurso.nome,
+          concursoNome: concurso.name,
           status: 'failed',
           error: error.message
         });
-        console.error(`[Edital Scanner] ❌ Erro ao processar ${concurso.nome}:`, error);
+        console.error(`[Edital Scanner] ❌ Erro ao processar ${concurso.name}:`, error);
       }
 
       // Aguardar 2 segundos entre processamentos para não sobrecarregar
@@ -145,7 +145,7 @@ export async function scanEditalsByBanca(bancaId: number): Promise<ScanResult> {
     for (const concurso of concursos.rows) {
       const editalUrl = concurso.edital_url || concurso.contest_url;
       
-      console.log(`[Edital Scanner] Processando: ${concurso.nome}`);
+      console.log(`[Edital Scanner] Processando: ${concurso.name}`);
 
       try {
         const processResult = await processHierarquiaForContest(
@@ -157,14 +157,14 @@ export async function scanEditalsByBanca(bancaId: number): Promise<ScanResult> {
           result.processed++;
           result.results.push({
             concursoId: concurso.id,
-            concursoNome: concurso.nome,
+            concursoNome: concurso.name,
             status: 'success'
           });
         } else {
           result.failed++;
           result.results.push({
             concursoId: concurso.id,
-            concursoNome: concurso.nome,
+            concursoNome: concurso.name,
             status: 'failed',
             error: processResult.error
           });
@@ -173,7 +173,7 @@ export async function scanEditalsByBanca(bancaId: number): Promise<ScanResult> {
         result.failed++;
         result.results.push({
           concursoId: concurso.id,
-          concursoNome: concurso.nome,
+          concursoNome: concurso.name,
           status: 'failed',
           error: error.message
         });

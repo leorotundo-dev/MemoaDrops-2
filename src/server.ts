@@ -79,6 +79,7 @@ import { registerAdminCosts } from './routes/admin-costs.js';
 import { registerAdminBancasReviews } from './routes/admin-bancas-reviews.js';
 import { registerAdminBancasMetrics } from './routes/admin-bancas-metrics.js';
 import { editalValidationRoutes } from './routes/admin-edital-validation.js';
+import { uploadPdfRoutes } from './routes/admin-upload-pdf.js';
 import { adminScrapersRoutes } from './routes/admin-scrapers.js';
 import adminRunMigration048Routes from './routes/admin-run-migration.js';
 
@@ -214,6 +215,7 @@ await registerAdminCosts(app);
 await registerAdminBancasReviews(app);
 await registerAdminBancasMetrics(app);
 await editalValidationRoutes(app);
+await uploadPdfRoutes(app);
 await app.register(adminScrapersRoutes);
 await app.register(adminRunMigrationsRoutes);
 await app.register(adminExecSqlRoutes);

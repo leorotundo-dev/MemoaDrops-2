@@ -2,6 +2,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { pool } from '../db/connection.js';
 import { scrapeBancaContestsWithPuppeteer } from './puppeteer-scraper.js';
+import { isValidEditalText, validatePdfUrl, extractPdfFromContestPage } from './edital-validator.js';
 
 /**
  * Interface para um concurso descoberto
@@ -235,12 +236,23 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
 
 /**
  * Salva concursos descobertos no banco de dados
+ * APENAS salva se:
+ * 1. O nome parece ser de um edital de abertura (não é retificação, resultado, etc.)
+ * 2. Consegue encontrar e validar o PDF do edital
  */
 export async function saveDiscoveredContests(contests: DiscoveredContest[]): Promise<number> {
   let savedCount = 0;
+  let rejectedCount = 0;
 
   for (const contest of contests) {
     try {
+      // FILTRO 1: Validar se o nome parece ser de um edital de abertura
+      if (!isValidEditalText(contest.nome)) {
+        console.log(`[Contest Discovery] ❌ Rejeitado por nome inválido: ${contest.nome}`);
+        rejectedCount++;
+        continue;
+      }
+
       // Verificar se já existe (por nome e banca)
       const { rows: existing } = await pool.query(
         'SELECT id FROM concursos WHERE name = $1 AND banca_id = $2',
@@ -252,6 +264,17 @@ export async function saveDiscoveredContests(contests: DiscoveredContest[]): Pro
         continue;
       }
 
+      // FILTRO 2: Tentar encontrar e validar o PDF do edital
+      console.log(`[Contest Discovery] 🔍 Procurando PDF para: ${contest.nome}`);
+      const contestUrl = contest.contest_url || contest.dou_url;
+      const pdfValidation = await validatePdfUrl(contestUrl);
+      
+      if (!pdfValidation.valid) {
+        console.log(`[Contest Discovery] ❌ Rejeitado por PDF inválido: ${contest.nome} - ${pdfValidation.message}`);
+        rejectedCount++;
+        continue;
+      }
+
       // Inserir novo concurso com schema novo
       // Gerar slug a partir do nome
       const slug = contest.nome.toLowerCase()
@@ -260,17 +283,24 @@ export async function saveDiscoveredContests(contests: DiscoveredContest[]): Pro
         .replace(/^-+|-+$/g, ''); // Remove hífens do início e fim
       
       await pool.query(
-        'INSERT INTO concursos (name, slug, banca_id, contest_url, created_at) VALUES ($1, $2, $3, $4, NOW())',
-        [contest.nome, slug, contest.banca_id, contest.contest_url || contest.dou_url]
+        'INSERT INTO concursos (name, slug, banca_id, contest_url, edital_url, created_at) VALUES ($1, $2, $3, $4, $5, NOW())',
+        [contest.nome, slug, contest.banca_id, contestUrl, pdfValidation.pdfUrl]
       );
 
       savedCount++;
-      console.log(`[Contest Discovery] Concurso salvo: ${contest.nome}`);
+      console.log(`[Contest Discovery] ✅ Concurso salvo: ${contest.nome}`);
+      console.log(`[Contest Discovery] 📄 PDF: ${pdfValidation.pdfUrl}`);
 
     } catch (error) {
       console.error(`[Contest Discovery] Erro ao salvar concurso ${contest.nome}:`, error);
+      rejectedCount++;
     }
   }
+
+  console.log(`[Contest Discovery] ===== RESUMO =====`);
+  console.log(`[Contest Discovery] ✅ Salvos: ${savedCount}`);
+  console.log(`[Contest Discovery] ❌ Rejeitados: ${rejectedCount}`);
+  console.log(`[Contest Discovery] 📊 Taxa de sucesso: ${(savedCount / (savedCount + rejectedCount) * 100).toFixed(1)}%`);
 
   return savedCount;
 }

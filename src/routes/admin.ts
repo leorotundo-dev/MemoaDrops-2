@@ -275,7 +275,9 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Listar concursos
   app.get('/admin/contests', async (req, reply) => {
-    const { rows: contests } = await pool.query(`
+    const { unprocessed } = req.query as any;
+    
+    let query = `
       SELECT 
         c.id, 
         c.name, 
@@ -291,11 +293,34 @@ export async function adminRoutes(app: FastifyInstance) {
         c.estado, 
         c.edital_url,
         c.contest_url, 
-        c.created_at
+        c.created_at,
+        COUNT(m.id) as total_subjects
       FROM concursos c
       LEFT JOIN bancas b ON c.banca_id = b.id
-      ORDER BY c.name ASC
-    `);
+      LEFT JOIN materias m ON m.contest_id = c.id
+    `;
+    
+    if (unprocessed === 'true') {
+      query += `
+        WHERE c.edital_url IS NOT NULL 
+          AND c.edital_url != ''
+          AND c.edital_url LIKE '%.pdf'
+      `;
+    }
+    
+    query += `
+      GROUP BY c.id, c.name, c.slug, b.display_name, b.name, c.ano, c.nivel, 
+               c.data_prova, c.salario, c.numero_vagas, c.orgao, c.cidade, 
+               c.estado, c.edital_url, c.contest_url, c.created_at
+    `;
+    
+    if (unprocessed === 'true') {
+      query += ` HAVING COUNT(m.id) = 0`;
+    }
+    
+    query += ` ORDER BY c.created_at DESC`;
+    
+    const { rows: contests } = await pool.query(query);
 
     return { data: contests };
   });

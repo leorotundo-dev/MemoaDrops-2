@@ -1011,6 +1011,33 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // ============================================
+  // EXTRAÇÃO DE URLs DE EDITAIS
+  // ============================================
+  app.post('/admin/editais/extract-urls', async (req, reply) => {
+    try {
+      const { extractAllEditalUrls } = await import('../services/edital-url-extractor.js');
+      const result = await extractAllEditalUrls();
+      return result;
+    } catch (error: any) {
+      console.error('[Admin] Erro ao extrair URLs de editais:', error);
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+
+  app.post('/admin/editais/extract-urls/:banca', async (req, reply) => {
+    const { banca } = req.params as any;
+    
+    try {
+      const { extractEditalUrlsByBanca } = await import('../services/edital-url-extractor.js');
+      const result = await extractEditalUrlsByBanca(banca);
+      return result;
+    } catch (error: any) {
+      console.error('[Admin] Erro ao extrair URLs de editais da banca:', error);
+      return reply.status(500).send({ error: error.message });
+    }
+  });
+
+  // ============================================
   // BANCAS ORGANIZADORAS E SCRAPERS
   // ============================================
   // ENDPOINTS REMOVIDOS - Usar admin.bancas.ts e admin.scrapers.ts ao invés deste

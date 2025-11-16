@@ -82,12 +82,21 @@ export function isValidEditalText(text: string): boolean {
     }
   }
 
-  // Se não tem nem blacklist nem whitelist, aceitar apenas se tiver "edital" + "concurso"
+  // Se não tem nem blacklist nem whitelist, aceitar se:
+  // 1. Tem "edital" + "concurso"
+  // 2. Tem siglas de órgãos públicos (PC, TJ, SEFA, etc.) + ano
   const hasEdital = lowerText.includes('edital');
   const hasConcurso = lowerText.includes('concurso') || lowerText.includes('processo seletivo');
   
   if (hasEdital && hasConcurso) {
     console.log(`[Edital Validator] Aceito por padrão (edital + concurso): "${text}"`);
+    return true;
+  }
+  
+  // Aceitar siglas de órgãos públicos com ano (ex: "PC MG 25", "TJ CE 25", "SEFA PR 25")
+  const publicOrgPattern = /\b(pc|tj|tce|tcu|pf|prf|pm|sefa|sefaz|pgm|pge|anac|ans|antt|anvisa|bcb|inss|mre|stm|fub|embrapa|fnde|banrisul|caesb|cau)\b.*\b(20\d{2}|\d{2})\b/i;
+  if (publicOrgPattern.test(text)) {
+    console.log(`[Edital Validator] Aceito por padrão (órgão público + ano): "${text}"`);
     return true;
   }
 

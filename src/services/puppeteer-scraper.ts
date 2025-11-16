@@ -79,11 +79,37 @@ export async function scrapeBancaContestsWithPuppeteer(
         const href = (link as HTMLAnchorElement).href;
         const text = link.textContent?.trim() || '';
 
-        // Para CEBRASPE, filtrar apenas links "MAIS INFORMAÇÕES"
+        // Para CEBRASPE, filtrar apenas links "MAIS INFORMAÇÕES" e pegar nome do h3
         if (bancaName.toLowerCase() === 'cebraspe') {
           if (text !== 'MAIS INFORMAÇÕES') {
             continue;
           }
+          
+          // Pegar o nome do concurso do <h3> mais próximo
+          const parent = (link as HTMLElement).closest('li, div, article');
+          const h3 = parent?.querySelector('h3');
+          const contestName = h3?.textContent?.trim() || text;
+          
+          if (href && contestName && contestName.length > 3) {
+            let fullUrl = href;
+            if (!href.startsWith('http')) {
+              try {
+                const url = new URL(href, baseUrl);
+                fullUrl = url.toString();
+              } catch {
+                continue;
+              }
+            }
+            
+            if (fullUrl.includes('concurso')) {
+              results.push({
+                nome: contestName.substring(0, 255),
+                dou_url: fullUrl,
+                banca_id: bancaId,
+              });
+            }
+          }
+          continue;
         }
 
         if (href && text && text.length > 3) {

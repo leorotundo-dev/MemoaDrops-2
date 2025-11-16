@@ -82,6 +82,7 @@ import { editalValidationRoutes } from './routes/admin-edital-validation.js';
 import { uploadPdfRoutes } from './routes/admin-upload-pdf.js';
 import { adminTestScraperRoutes } from './routes/admin-test-scraper.js';
 import { adminPopulateEditalUrlsRoutes } from './routes/admin-populate-edital-urls.js';
+import { adminScrapersRoutes } from './routes/admin-scrapers.js';
 import adminRunMigration048Routes from './routes/admin-run-migration.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });

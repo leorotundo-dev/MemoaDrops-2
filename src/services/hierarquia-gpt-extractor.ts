@@ -37,6 +37,13 @@ interface ConcursoInfo {
   data_inscricao_fim?: string;
   data_prova?: string;
   data_resultado?: string;
+  valor_inscricao?: number;
+  requisitos?: string;
+  tipo_prova?: string;
+  carga_horaria?: number;
+  regime_juridico?: string;
+  jornada_trabalho?: string;
+  beneficios?: string;
   confidence: 'low' | 'medium' | 'high';
 }
 
@@ -178,6 +185,13 @@ INFORMAÇÕES A EXTRAIR:
 10. **data_inscricao_fim**: Data de fim das inscrições (formato: "YYYY-MM-DD")
 11. **data_prova**: Data da prova (formato: "YYYY-MM-DD")
 12. **data_resultado**: Data prevista do resultado (formato: "YYYY-MM-DD")
+13. **valor_inscricao**: Valor da taxa de inscrição (número decimal, ex: 85.50)
+14. **requisitos**: Requisitos principais em texto curto (ex: "Ensino superior completo, idade mínima 18 anos, CNH categoria B")
+15. **tipo_prova**: Tipos de prova separados por vírgula (ex: "Objetiva, Discursiva, Títulos")
+16. **carga_horaria**: Carga horária semanal em horas (número inteiro, ex: 40)
+17. **regime_juridico**: Regime jurídico (ex: "Estatutário", "CLT", "Temporário")
+18. **jornada_trabalho**: Descrição da jornada (ex: "40 horas semanais", "Dedicação exclusiva")
+19. **beneficios**: Benefícios oferecidos em texto curto (ex: "Vale-alimentação, vale-transporte, plano de saúde")
 
 REGRAS:
 - Se uma informação NÃO estiver claramente no texto, NÃO invente, deixe como null
@@ -202,6 +216,13 @@ EXEMPLO DE JSON:
   "data_inscricao_fim": "2025-07-31",
   "data_prova": "2025-10-15",
   "data_resultado": "2025-11-30",
+  "valor_inscricao": 85.50,
+  "requisitos": "Ensino superior completo em qualquer área, idade mínima 18 anos",
+  "tipo_prova": "Objetiva, Discursiva, Títulos",
+  "carga_horaria": 40,
+  "regime_juridico": "Estatutário",
+  "jornada_trabalho": "40 horas semanais",
+  "beneficios": "Vale-alimentação R$ 800, vale-transporte, plano de saúde",
   "confidence": "high"
 }
 

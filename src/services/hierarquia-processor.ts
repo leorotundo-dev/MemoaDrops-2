@@ -81,7 +81,14 @@ export async function processHierarquiaForContest(
           data_inscricao_inicio = COALESCE($10, data_inscricao_inicio),
           data_inscricao_fim = COALESCE($11, data_inscricao_fim),
           data_prova = COALESCE($12, data_prova),
-          data_resultado = COALESCE($13, data_resultado)
+          data_resultado = COALESCE($13, data_resultado),
+          valor_inscricao = COALESCE($14, valor_inscricao),
+          requisitos = COALESCE($15, requisitos),
+          tipo_prova = COALESCE($16, tipo_prova),
+          carga_horaria = COALESCE($17, carga_horaria),
+          regime_juridico = COALESCE($18, regime_juridico),
+          jornada_trabalho = COALESCE($19, jornada_trabalho),
+          beneficios = COALESCE($20, beneficios)
         WHERE id = $1`,
         [
           contestId,
@@ -96,7 +103,14 @@ export async function processHierarquiaForContest(
           concursoInfo.data_inscricao_inicio,
           concursoInfo.data_inscricao_fim,
           concursoInfo.data_prova,
-          concursoInfo.data_resultado
+          concursoInfo.data_resultado,
+          concursoInfo.valor_inscricao,
+          concursoInfo.requisitos,
+          concursoInfo.tipo_prova,
+          concursoInfo.carga_horaria,
+          concursoInfo.regime_juridico,
+          concursoInfo.jornada_trabalho,
+          concursoInfo.beneficios
         ]
       );
       console.log('[Hierarquia Processor] Informações do concurso atualizadas com sucesso');

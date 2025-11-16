@@ -263,6 +263,13 @@ export async function saveDiscoveredContests(contests: DiscoveredContest[], opti
         continue;
       }
 
+      // Buscar nome da banca
+      const { rows: bancaRows } = await pool.query(
+        'SELECT name FROM bancas WHERE id = $1',
+        [contest.banca_id]
+      );
+      const bancaName = bancaRows[0]?.name || null;
+
       // Verificar se já existe (por nome e banca)
       const { rows: existing } = await pool.query(
         'SELECT id FROM concursos WHERE name = $1 AND banca_id = $2',
@@ -301,8 +308,8 @@ export async function saveDiscoveredContests(contests: DiscoveredContest[], opti
         .replace(/^-+|-+$/g, ''); // Remove hífens do início e fim
       
       await pool.query(
-        'INSERT INTO concursos (name, slug, banca_id, contest_url, edital_url, created_at) VALUES ($1, $2, $3, $4, $5, NOW())',
-        [contest.nome, slug, contest.banca_id, contestUrl, pdfUrl]
+        'INSERT INTO concursos (name, slug, banca, banca_id, contest_url, edital_url, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
+        [contest.nome, slug, bancaName, contest.banca_id, contestUrl, pdfUrl]
       );
 
       savedCount++;

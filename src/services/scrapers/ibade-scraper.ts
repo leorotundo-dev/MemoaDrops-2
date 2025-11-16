@@ -1,5 +1,3 @@
-import axios from 'axios';
-import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
 
 interface IbadeConcurso {
@@ -22,32 +20,45 @@ export class IbadeScraper {
       });
 
       const page = await browser.newPage();
-      await page.goto(`${this.baseUrl}/edital`, { waitUntil: 'networkidle2' });
+      await page.goto(`${this.baseUrl}/edital`, { waitUntil: 'networkidle2', timeout: 60000 });
 
-      // Clicar na aba "INSCRIÇÕES ABERTAS"
-      await page.click('a:has-text("INSCRIÇÕES ABERTAS")');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Aguardar a aba "INSCRIÇÕES ABERTAS" carregar
+      await page.waitForSelector('a[href*="inscricoes-abertas"], a:contains("INSCRIÇÕES ABERTAS")', { timeout: 10000 });
 
-      // Extrair concursos
+      // Extrair concursos da aba ativa (INSCRIÇÕES ABERTAS é a padrão)
       const concursos = await page.evaluate(() => {
-        const results: IbadeConcurso[] = [];
-        const cards = document.querySelectorAll('.card, [class*="concurso"], [class*="edital"]');
-
+        const results: Array<{name: string; contestUrl: string}> = [];
+        
+        // Procurar todos os cards de concursos
+        const cards = document.querySelectorAll('[class*="card"], [class*="concurso"], [class*="edital"]');
+        
         cards.forEach((card) => {
-          // Procurar nome do concurso
-          const nameEl = card.querySelector('h2, h3, h4, .title, [class*="nome"]');
-          const name = nameEl?.textContent?.trim();
-
-          // Procurar link para página do concurso
-          const linkEl = card.querySelector('a[href*="/edital/ver/"]');
-          const contestUrl = linkEl?.getAttribute('href');
-
-          if (name && contestUrl) {
+          // Procurar nome do concurso (geralmente em h3, h4, ou strong)
+          const nameEl = card.querySelector('h3, h4, strong, [class*="titulo"], [class*="nome"]');
+          let name = nameEl?.textContent?.trim();
+          
+          // Se não encontrou, procurar em divs com texto
+          if (!name) {
+            const textDivs = card.querySelectorAll('div');
+            for (const div of textDivs) {
+              const text = div.textContent?.trim();
+              if (text && text.length > 10 && text.length < 200) {
+                name = text;
+                break;
+              }
+            }
+          }
+          
+          // Procurar link "Inscrições Abertas" ou similar
+          const linkEl = card.querySelector('a[href*="/edital/ver/"], a[href*="/ver/"]');
+          const href = linkEl?.getAttribute('href');
+          
+          if (name && href) {
             results.push({
               name,
-              contestUrl: contestUrl.startsWith('http') 
-                ? contestUrl 
-                : `https://portal.ibade.selecao.site${contestUrl}`,
+              contestUrl: href.startsWith('http') 
+                ? href 
+                : `https://portal.ibade.selecao.site${href}`,
             });
           }
         });
@@ -56,6 +67,8 @@ export class IbadeScraper {
       });
 
       await browser.close();
+      
+      console.log(`[IBADE] Encontrados ${concursos.length} concursos`);
       return concursos;
     } catch (error) {
       console.error('Erro ao scrape IBADE:', error);
@@ -74,27 +87,31 @@ export class IbadeScraper {
       });
 
       const page = await browser.newPage();
-      await page.goto(contestUrl, { waitUntil: 'networkidle2' });
+      await page.goto(contestUrl, { waitUntil: 'networkidle2', timeout: 60000 });
 
-      // Procurar link "EDITAL DE ABERTURA" ou "Edital de Abertura"
+      // Aguardar seção de arquivos carregar
+      await page.waitForSelector('[class*="arquivo"], a[href*=".pdf"]', { timeout: 10000 });
+
+      // Procurar link "EDITAL DE ABERTURA"
       const editalUrl = await page.evaluate(() => {
-        // Procurar todos os links de download
-        const downloadLinks = Array.from(document.querySelectorAll('a[href*=".pdf"], a:has-text("DOWNLOAD")'));
-
-        for (const link of downloadLinks) {
-          const text = link.textContent?.toUpperCase() || '';
-          const previousText = link.previousElementSibling?.textContent?.toUpperCase() || '';
-          const parentText = link.parentElement?.textContent?.toUpperCase() || '';
-
+        // Procurar todos os links e textos
+        const allElements = Array.from(document.querySelectorAll('*'));
+        
+        for (const el of allElements) {
+          const text = el.textContent?.toUpperCase() || '';
+          
           // Verificar se é edital de abertura
-          if (
-            text.includes('EDITAL') && text.includes('ABERTURA') ||
-            previousText.includes('EDITAL') && previousText.includes('ABERTURA') ||
-            parentText.includes('EDITAL') && parentText.includes('ABERTURA')
-          ) {
-            const href = link.getAttribute('href');
-            if (href && href.includes('.pdf')) {
-              return href.startsWith('http') ? href : `https://portal.ibade.selecao.site${href}`;
+          if (text.includes('EDITAL') && text.includes('ABERTURA')) {
+            // Procurar link PDF próximo
+            const link = el.querySelector('a[href*=".pdf"]') || 
+                        el.closest('a[href*=".pdf"]') ||
+                        el.parentElement?.querySelector('a[href*=".pdf"]');
+            
+            if (link) {
+              const href = link.getAttribute('href');
+              if (href) {
+                return href.startsWith('http') ? href : `https://portal.ibade.selecao.site${href}`;
+              }
             }
           }
         }
@@ -115,6 +132,8 @@ export class IbadeScraper {
    */
   async scrapeCompleto(): Promise<IbadeConcurso[]> {
     const concursos = await this.scrapeAbertos();
+    
+    console.log(`[IBADE] Extraindo URLs de ${concursos.length} concursos...`);
     
     // Extrair URLs dos editais em paralelo (com limite de 3 simultâneos)
     const results: IbadeConcurso[] = [];

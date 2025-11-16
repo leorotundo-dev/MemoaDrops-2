@@ -26,7 +26,7 @@ export class IbadeScraper {
 
       // Clicar na aba "INSCRIÇÕES ABERTAS"
       await page.click('a:has-text("INSCRIÇÕES ABERTAS")');
-      await page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Extrair concursos
       const concursos = await page.evaluate(() => {

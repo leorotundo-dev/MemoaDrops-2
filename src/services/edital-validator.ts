@@ -99,6 +99,20 @@ export function isValidEditalText(text: string): boolean {
     console.log(`[Edital Validator] Aceito por padrão (órgão público + ano): "${text}"`);
     return true;
   }
+  
+  // Aceitar nomes de municípios/estados + palavras-chave de cargo público
+  const municipioPattern = /\b(município|prefeitura|estado|governo|assembleia|câmara|tribunal|polícia|civil|militar)\b/i;
+  if (municipioPattern.test(text)) {
+    console.log(`[Edital Validator] Aceito por padrão (município/órgão): "${text}"`);
+    return true;
+  }
+  
+  // Aceitar nomes de instituições federais
+  const instituicaoPattern = /\b(instituto federal|universidade|ifnmg|ufmg|ufrj|usp|unicamp|fiocruz)\b/i;
+  if (instituicaoPattern.test(text)) {
+    console.log(`[Edital Validator] Aceito por padrão (instituição): "${text}"`);
+    return true;
+  }
 
   console.log(`[Edital Validator] Rejeitado (não atende critérios): "${text}"`);
   return false;

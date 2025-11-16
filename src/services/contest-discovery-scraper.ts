@@ -78,13 +78,22 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
     // Fazer requisição HTTP normal
     const response = await axios.get(contestUrl, {
       timeout: 30000,
+      responseType: 'arraybuffer', // Receber como buffer para detectar encoding
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
     });
 
+    // Detectar encoding correto (FUNDATEC usa ISO-8859-1)
+    let html = '';
+    if (banca.name === 'fundatec') {
+      html = Buffer.from(response.data).toString('latin1'); // ISO-8859-1 = latin1
+    } else {
+      html = Buffer.from(response.data).toString('utf-8');
+    }
+
     // Parse HTML com Cheerio
-    const $ = cheerio.load(response.data);
+    const $ = cheerio.load(html);
     const contests: DiscoveredContest[] = [];
 
     // Seletores específicos por banca

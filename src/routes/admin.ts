@@ -323,11 +323,8 @@ export async function adminRoutes(app: FastifyInstance) {
     
     query += ` ORDER BY c.created_at DESC`;
     
-    // Contar total de registros
-    const countQuery = query.replace(
-      /SELECT[\s\S]+?FROM/i,
-      'SELECT COUNT(DISTINCT c.id) as total FROM'
-    ).replace(/GROUP BY[\s\S]+?ORDER BY[\s\S]+$/i, '');
+    // Contar total de registros usando subquery
+    const countQuery = `SELECT COUNT(*) as total FROM (${query}) as subquery`;
     
     const { rows: [{ total }] } = await pool.query(countQuery);
     const totalPages = Math.ceil(parseInt(total) / pageSize);

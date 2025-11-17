@@ -10,7 +10,7 @@
     "postinstall": "npx playwright install --with-deps chromium",
     "dev": "tsx src/server.ts",
     "worker": "tsx src/worker.ts",
-    "build": "tsc -p tsconfig.json && mkdir -p dist/db/migrations && cp src/db/migrations/*.sql dist/db/migrations/",
+    "build": "npx playwright install --with-deps chromium && tsc -p tsconfig.json && mkdir -p dist/db/migrations && cp src/db/migrations/*.sql dist/db/migrations/",
     "start": "node --enable-source-maps dist/server.js",
     "start:worker": "node --enable-source-maps dist/worker.js",
     "migrate": "ts-node src/db/run-migration.ts",

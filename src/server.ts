@@ -85,7 +85,7 @@ import { adminPopulateEditalUrlsRoutes } from './routes/admin-populate-edital-ur
 import { adminScrapersRoutes } from './routes/admin-scrapers.js';
 import adminRunMigration048Routes from './routes/admin-run-migration.js';
 import { adminIbadeScraperRoutes } from './routes/admin-ibade-scraper.js';
-import { adminFgvScraperRoutes } from './routes/admin-fgv-scraper.js';
+// import { adminFgvScraperRoutes } from './routes/admin-fgv-scraper.js'; // Removido temporariamente
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -227,7 +227,7 @@ await app.register(adminRunMigrationsRoutes);
 await app.register(adminExecSqlRoutes);
 await app.register(adminRunMigration048Routes);
 await adminIbadeScraperRoutes(app);
-await adminFgvScraperRoutes(app);
+// await adminFgvScraperRoutes(app); // Removido temporariamente
 await registerTutorRoutes(app);
 
 // Garante que tudo foi carregado antes de expor o Swagger

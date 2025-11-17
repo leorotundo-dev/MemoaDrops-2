@@ -1,7 +1,7 @@
 import { safeRunBancaBySlug } from './_base.js';
 
 const ID = 'fundatec';
-const BASE = process.env['B_FUNDATEC_BASE'] || 'https://www.fundatec.org.br/portal/concursos/';
+const BASE = process.env['B_FUNDATEC_BASE'] || 'https://www.fundatec.org.br/portal/concursos/concursos_abertos.php';
 const PATTERN = new RegExp('fundatec\.org\.br', 'i');
 const MODE = (process.env['B_FUNDATEC_MODE'] as 'static'|'headless') || 'headless';
 

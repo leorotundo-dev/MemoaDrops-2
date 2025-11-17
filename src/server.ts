@@ -223,7 +223,7 @@ await editalValidationRoutes(app);
 await uploadPdfRoutes(app);
 await adminTestScraperRoutes(app);
 await adminPopulateEditalUrlsRoutes(app);
-await app.register(adminScrapersRoutes);
+await adminScrapersRoutes(app);
 await app.register(adminRunMigrationsRoutes);
 await app.register(adminExecSqlRoutes);
 await app.register(adminRunMigration048Routes);

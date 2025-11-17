@@ -6,10 +6,16 @@ const PATTERN = new RegExp('fundatec\.org\.br', 'i');
 const MODE = (process.env['B_FUNDATEC_MODE'] as 'static'|'headless') || 'headless';
 
 // Filtros customizados para FUNDATEC
-// Site é SPA que carrega conteúdo via JavaScript
+// Aceitar qualquer link que contenha palavras-chave comuns em concursos
 const CUSTOM_FILTERS = {
-  textPattern: /concurso|inscri|edital|seletivo|mais informações/i,
-  extractNameFromDOM: true // Extrair nome do concurso do elemento pai
+  textPattern: /prefeitura|município|polícia|concurso|processo|seletivo|edital|universidade|instituto|federal|estadual|municipal|público/i,
+  extractNameFromDOM: false, // Usar texto do próprio link
+  validateUrl: (url: string) => {
+    // Aceitar URLs que apontam para páginas de concursos específicos
+    // Rejeitar links de navegação, menu, etc.
+    const invalid = /capacitacao|escola|estagio|pesquisa|consultoria|institucional|contato|localizacao|noticia|cadastre/i;
+    return !invalid.test(url);
+  }
 };
 
 export async function run(){ 

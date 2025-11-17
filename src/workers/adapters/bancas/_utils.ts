@@ -51,29 +51,47 @@ export async function upsertContest(bancaId: number, externalId: string, data: a
     .replace(/[^a-z0-9]+/g, '-') // Substitui não-alfanuméricos por -
     .replace(/^-+|-+$/g, ''); // Remove - do início/fim
   
-  await pool.query(`
-    INSERT INTO concursos (
-      banca_id, 
-      external_id, 
-      name, 
-      slug,
-      contest_url, 
-      status, 
-      informacoes_scraper, 
-      scraped_at,
-      created_at, 
-      updated_at
-    )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), NOW())
-    ON CONFLICT (banca_id, external_id)
-    DO UPDATE SET 
-      name = EXCLUDED.name,
-      contest_url = EXCLUDED.contest_url,
-      status = COALESCE(EXCLUDED.status, concursos.status),
-      informacoes_scraper = COALESCE(EXCLUDED.informacoes_scraper, concursos.informacoes_scraper),
-      scraped_at = NOW(),
-      updated_at = NOW()
-  `, [bancaId, externalId, title, slug, url, status || 'descoberto', raw || {}]);
+  // Tentar inserir, se houver conflito de slug, adicionar sufixo
+  let finalSlug = slug;
+  let attempt = 0;
+  
+  while (attempt < 10) {
+    try {
+      await pool.query(`
+        INSERT INTO concursos (
+          banca_id, 
+          external_id, 
+          name, 
+          slug,
+          contest_url, 
+          status, 
+          informacoes_scraper, 
+          scraped_at,
+          created_at, 
+          updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), NOW())
+        ON CONFLICT (banca_id, external_id)
+        DO UPDATE SET 
+          name = EXCLUDED.name,
+          slug = EXCLUDED.slug,
+          contest_url = EXCLUDED.contest_url,
+          status = COALESCE(EXCLUDED.status, concursos.status),
+          informacoes_scraper = COALESCE(EXCLUDED.informacoes_scraper, concursos.informacoes_scraper),
+          scraped_at = NOW(),
+          updated_at = NOW()
+      `, [bancaId, externalId, title, finalSlug, url, status || 'descoberto', raw || {}]);
+      break; // Sucesso, sair do loop
+    } catch (error: any) {
+      if (error.message?.includes('concursos_slug_key')) {
+        // Conflito de slug, tentar com sufixo
+        attempt++;
+        finalSlug = `${slug}-${attempt}`;
+      } else {
+        throw error; // Outro erro, propagar
+      }
+    }
+  }
 }
 
 /**

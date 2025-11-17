@@ -330,128 +330,53 @@ export async function adminRoutes(app: FastifyInstance) {
     };
   });
 
-  // Listar concursos (endpoint antigo, sem paginação)
+  // Listar concursos COM PAGINAÇÃO
   app.get('/admin/contests', async (req, reply) => {
-    try {
-      const { unprocessed, page = '1', limit = '20', search } = req.query as any;
-      const currentPage = Math.max(1, parseInt(page) || 1);
-      const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
-      const offset = (currentPage - 1) * pageSize;
-      
-      // Construir condição WHERE
-      let whereClause = '';
-      if (unprocessed === 'true') {
-        whereClause = `
-          WHERE c.edital_url IS NOT NULL 
-            AND c.edital_url != ''
-            AND c.edital_url LIKE '%.pdf'
-        `;
-      }
-      
-      // Query base
-      let baseQuery = `
-        SELECT 
-          c.id, 
-          c.name, 
-          c.slug, 
-          COALESCE(b.display_name, b.name) as banca,
-          c.ano, 
-          c.nivel, 
-          c.data_prova, 
-          c.salario, 
-          c.numero_vagas, 
-          c.orgao, 
-          c.cidade, 
-          c.estado, 
-          c.edital_url,
-          c.contest_url, 
-          c.created_at,
-          COUNT(m.id) as total_subjects
-        FROM concursos c
-        LEFT JOIN bancas b ON c.banca_id = b.id
-        LEFT JOIN materias m ON m.contest_id = c.id
-        ${whereClause}
-        GROUP BY c.id, c.name, c.slug, b.display_name, b.name, c.ano, c.nivel, 
-                 c.data_prova, c.salario, c.numero_vagas, c.orgao, c.cidade, 
-                 c.estado, c.edital_url, c.contest_url, c.created_at
-      `;
-      
-      if (unprocessed === 'true') {
-        baseQuery += ` HAVING COUNT(m.id) = 0`;
-      }
-      
-      baseQuery += ` ORDER BY c.created_at DESC`;
-      
-      // Contar total
-      const countQuery = `SELECT COUNT(*) as total FROM (${baseQuery}) as subquery`;
-      const { rows: [{ total }] } = await pool.query(countQuery);
-      const totalPages = Math.ceil(parseInt(total) / pageSize);
-      
-      // Buscar dados com paginação
-      const dataQuery = `${baseQuery} LIMIT ${pageSize} OFFSET ${offset}`;
-      const { rows: contests } = await pool.query(dataQuery);
+    const { page = '1', limit = '20' } = req.query as any;
+    const currentPage = Math.max(1, parseInt(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (currentPage - 1) * pageSize;
+    
+    // Contar total
+    const { rows: [{ total }] } = await pool.query('SELECT COUNT(*) as total FROM concursos');
+    const totalPages = Math.ceil(parseInt(total) / pageSize);
+    
+    // Buscar dados
+    const { rows: contests } = await pool.query(`
+      SELECT 
+        c.id, 
+        c.name, 
+        c.slug, 
+        COALESCE(b.display_name, b.name) as banca,
+        c.ano, 
+        c.nivel, 
+        c.data_prova, 
+        c.salario, 
+        c.numero_vagas, 
+        c.orgao, 
+        c.cidade, 
+        c.estado, 
+        c.edital_url,
+        c.contest_url, 
+        c.created_at,
+        (SELECT COUNT(*) FROM materias m WHERE m.contest_id = c.id) as total_subjects
+      FROM concursos c
+      LEFT JOIN bancas b ON c.banca_id = b.id
+      ORDER BY c.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, [pageSize, offset]);
 
-      return { 
-        data: contests,
-        pagination: {
-          page: currentPage,
-          limit: pageSize,
-          total: parseInt(total),
-          totalPages,
-          hasNext: currentPage < totalPages,
-          hasPrev: currentPage > 1
-        }
-      };
-    } catch (error) {
-      console.error('Erro ao buscar concursos com paginação:', error);
-      // Fallback: retornar sem paginação se houver erro
-      const { unprocessed } = req.query as any;
-      let query = `
-        SELECT 
-          c.id, 
-          c.name, 
-          c.slug, 
-          COALESCE(b.display_name, b.name) as banca,
-          c.ano, 
-          c.nivel, 
-          c.data_prova, 
-          c.salario, 
-          c.numero_vagas, 
-          c.orgao, 
-          c.cidade, 
-          c.estado, 
-          c.edital_url,
-          c.contest_url, 
-          c.created_at,
-          COUNT(m.id) as total_subjects
-        FROM concursos c
-        LEFT JOIN bancas b ON c.banca_id = b.id
-        LEFT JOIN materias m ON m.contest_id = c.id
-      `;
-      
-      if (unprocessed === 'true') {
-        query += `
-          WHERE c.edital_url IS NOT NULL 
-            AND c.edital_url != ''
-            AND c.edital_url LIKE '%.pdf'
-        `;
+    return { 
+      data: contests,
+      pagination: {
+        page: currentPage,
+        limit: pageSize,
+        total: parseInt(total),
+        totalPages,
+        hasNext: currentPage < totalPages,
+        hasPrev: currentPage > 1
       }
-      
-      query += `
-        GROUP BY c.id, c.name, c.slug, b.display_name, b.name, c.ano, c.nivel, 
-                 c.data_prova, c.salario, c.numero_vagas, c.orgao, c.cidade, 
-                 c.estado, c.edital_url, c.contest_url, c.created_at
-      `;
-      
-      if (unprocessed === 'true') {
-        query += ` HAVING COUNT(m.id) = 0`;
-      }
-      
-      query += ` ORDER BY c.created_at DESC`;
-      
-      const { rows: contests } = await pool.query(query);
-      return { data: contests };
-    }
+    };
   });
 
 

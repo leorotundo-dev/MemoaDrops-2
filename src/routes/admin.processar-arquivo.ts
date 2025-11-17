@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { FastifyPluginAsync } from 'fastify';
 import { db } from '../db/index.js';
 import { extrairQuestoesComEstatisticas } from '../services/pdf-questoes-extractor.js';

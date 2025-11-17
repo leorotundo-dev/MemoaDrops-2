@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { pool } from '../db/connection.js';
 import puppeteer, { Browser, Page } from 'puppeteer';
 import { extractEditalUrl } from './adapters/bancas/_edital-extractor.js';

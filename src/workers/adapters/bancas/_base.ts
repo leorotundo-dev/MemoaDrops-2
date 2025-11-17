@@ -87,7 +87,7 @@ export async function runBanca(bancaId:number, base:string, domainPattern:RegExp
 
   // 2) persiste
   let count = 0;
-  for (const it of items.slice(0, 100)){
+  for (const it of items){
     const external_id = sha256(it.url).slice(0,16);
     await upsertContest(bancaId, external_id, {
       title: it.title, url: it.url, status: null, raw: { source: bancaId }

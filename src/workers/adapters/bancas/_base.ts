@@ -65,7 +65,24 @@ export async function runBanca(bancaId:number, base:string, domainPattern:RegExp
     // Validar URL se filtro customizado especificar
     if (customFilters?.urlMustContain && !url.includes(customFilters.urlMustContain)) return;
     
-    items.push({ title: text, url });
+    // Extrair nome do DOM se solicitado (para sites que usam texto genérico nos links)
+    let title = text;
+    if (customFilters?.extractNameFromDOM) {
+      // Buscar título em elementos próximos (h1-h6, strong, etc)
+      const parent = $(a).parent();
+      const heading = parent.find('h1, h2, h3, h4, h5, h6').first().text().trim();
+      if (heading && heading !== text) {
+        title = heading;
+      } else {
+        // Tentar buscar no elemento pai direto
+        const parentText = parent.clone().children().remove().end().text().trim();
+        if (parentText && parentText !== text) {
+          title = parentText;
+        }
+      }
+    }
+    
+    items.push({ title, url });
   });
 
   // 2) persiste

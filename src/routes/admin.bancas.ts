@@ -66,6 +66,36 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
     }
   });
 
+  // Atualizar contadores de concursos de todas as bancas (DEVE VIR ANTES DE /admin/bancas/:id)
+  app.post('/admin/bancas/update-counts', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
+    try {
+      const { rows: bancas } = await pool.query('SELECT id, display_name FROM bancas ORDER BY display_name');
+      const results = [];
+
+      for (const banca of bancas) {
+        const { rows: [count] } = await pool.query(
+          'SELECT COUNT(*)::int as total FROM concursos WHERE banca_id = $1',
+          [banca.id]
+        );
+
+        await pool.query(
+          'UPDATE bancas SET total_contests = $1 WHERE id = $2',
+          [count.total, banca.id]
+        );
+
+        results.push({ id: banca.id, name: banca.display_name, contests: count.total });
+      }
+
+      return {
+        success: true,
+        message: `Contadores atualizados para ${bancas.length} bancas!`,
+        results
+      };
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
   // Executar scraper de concursos para todas as bancas (DEVE VIR ANTES DE /admin/bancas/:id)
   app.post('/admin/bancas/scrape-all', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
     try {

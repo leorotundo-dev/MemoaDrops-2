@@ -4,6 +4,7 @@ import { pool } from '../db/connection.js';
 /**
  * Rotas administrativas unificadas para scrapers de bancas
  * Expõe o sistema robusto de workers/adapters/bancas via API REST
+ * @version 2.0 - Sistema unificado
  */
 export async function adminBancasScrapersRoutes(app: FastifyInstance) {
   

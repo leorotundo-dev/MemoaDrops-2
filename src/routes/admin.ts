@@ -275,7 +275,10 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // Listar concursos
   app.get('/admin/contests', async (req, reply) => {
-    const { unprocessed } = req.query as any;
+    const { unprocessed, page = '1', limit = '20', search } = req.query as any;
+    const currentPage = Math.max(1, parseInt(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (currentPage - 1) * pageSize;
     
     let query = `
       SELECT 
@@ -320,9 +323,31 @@ export async function adminRoutes(app: FastifyInstance) {
     
     query += ` ORDER BY c.created_at DESC`;
     
+    // Contar total de registros
+    const countQuery = query.replace(
+      /SELECT[\s\S]+?FROM/i,
+      'SELECT COUNT(DISTINCT c.id) as total FROM'
+    ).replace(/GROUP BY[\s\S]+?ORDER BY[\s\S]+$/i, '');
+    
+    const { rows: [{ total }] } = await pool.query(countQuery);
+    const totalPages = Math.ceil(parseInt(total) / pageSize);
+    
+    // Adicionar paginação
+    query += ` LIMIT ${pageSize} OFFSET ${offset}`;
+    
     const { rows: contests } = await pool.query(query);
 
-    return { data: contests };
+    return { 
+      data: contests,
+      pagination: {
+        page: currentPage,
+        limit: pageSize,
+        total: parseInt(total),
+        totalPages,
+        hasNext: currentPage < totalPages,
+        hasPrev: currentPage > 1
+      }
+    };
   });
 
   // Buscar detalhes de um concurso específico

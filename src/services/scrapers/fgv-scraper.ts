@@ -44,12 +44,12 @@ export class FgvScraper {
       });
 
       // Aguardar carregamento
-      await this.page.waitForTimeout(3000);
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
       // Clicar na aba "Em andamento"
       try {
         await this.page.click('a:has-text("Em andamento")');
-        await this.page.waitForTimeout(2000);
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (e) {
         console.log('Aba "Em andamento" já selecionada ou não encontrada');
       }
@@ -98,7 +98,7 @@ export class FgvScraper {
         const nextButton = await this.page.$('a:has-text("Próxima página")');
         if (nextButton) {
           await nextButton.click();
-          await this.page.waitForTimeout(3000);
+          await new Promise(resolve => setTimeout(resolve, 3000));
           pageNum++;
         } else {
           hasNextPage = false;
@@ -125,7 +125,7 @@ export class FgvScraper {
         timeout: 60000
       });
 
-      await this.page.waitForTimeout(2000);
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Buscar link com "EDITAL DE ABERTURA" ou "Edital de Abertura"
       const editalUrl = await this.page.evaluate(() => {
@@ -160,7 +160,7 @@ export class FgvScraper {
             timeout: 60000
           });
           
-          await this.page.waitForTimeout(1000);
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
           // Verificar se redirecionou para PDF
           const finalUrl = this.page.url();
@@ -202,7 +202,7 @@ export class FgvScraper {
         });
         
         // Delay entre requisições
-        await this.page!.waitForTimeout(2000);
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
       return concursosComEditais;

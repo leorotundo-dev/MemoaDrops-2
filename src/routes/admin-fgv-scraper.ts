@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { FgvScraper } from '../services/scrapers/fgv-scraper';
-import { db } from '../db/connection';
+import { db } from '../db/index';
 
 export async function adminFgvScraperRoutes(fastify: FastifyInstance) {
   // Testar scraper FGV (sem salvar)

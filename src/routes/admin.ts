@@ -273,7 +273,64 @@ export async function adminRoutes(app: FastifyInstance) {
   // GESTÃO DE CONTEÚDO - CONCURSOS
   // ============================================
 
-  // Listar concursos
+  // ENDPOINT COM PAGINAÇÃO (deve vir ANTES de /:id)
+  app.get('/admin/contests/paginated', async (req, reply) => {
+    const { page = '1', limit = '20', search } = req.query as any;
+    const currentPage = Math.max(1, parseInt(page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
+    const offset = (currentPage - 1) * pageSize;
+    
+    // Query simples para contar
+    const countResult = await pool.query(`
+      SELECT COUNT(DISTINCT c.id) as total
+      FROM concursos c
+    `);
+    const total = parseInt(countResult.rows[0].total);
+    const totalPages = Math.ceil(total / pageSize);
+    
+    // Query para buscar dados
+    const dataResult = await pool.query(`
+      SELECT 
+        c.id, 
+        c.name, 
+        c.slug, 
+        COALESCE(b.display_name, b.name) as banca,
+        c.ano, 
+        c.nivel, 
+        c.data_prova, 
+        c.salario, 
+        c.numero_vagas, 
+        c.orgao, 
+        c.cidade, 
+        c.estado, 
+        c.edital_url,
+        c.contest_url, 
+        c.created_at,
+        COUNT(m.id) as total_subjects
+      FROM concursos c
+      LEFT JOIN bancas b ON c.banca_id = b.id
+      LEFT JOIN materias m ON m.contest_id = c.id
+      GROUP BY c.id, c.name, c.slug, b.display_name, b.name, c.ano, c.nivel, 
+               c.data_prova, c.salario, c.numero_vagas, c.orgao, c.cidade, 
+               c.estado, c.edital_url, c.contest_url, c.created_at
+      ORDER BY c.created_at DESC
+      LIMIT $1 OFFSET $2
+    `, [pageSize, offset]);
+    
+    return {
+      data: dataResult.rows,
+      pagination: {
+        page: currentPage,
+        limit: pageSize,
+        total,
+        totalPages,
+        hasNext: currentPage < totalPages,
+        hasPrev: currentPage > 1
+      }
+    };
+  });
+
+  // Listar concursos (endpoint antigo, sem paginação)
   app.get('/admin/contests', async (req, reply) => {
     try {
       const { unprocessed, page = '1', limit = '20', search } = req.query as any;
@@ -397,62 +454,7 @@ export async function adminRoutes(app: FastifyInstance) {
     }
   });
 
-  // NOVO ENDPOINT COM PAGINAÇÃO (v2)
-  app.get('/admin/contests/paginated', async (req, reply) => {
-    const { page = '1', limit = '20', search } = req.query as any;
-    const currentPage = Math.max(1, parseInt(page) || 1);
-    const pageSize = Math.min(100, Math.max(1, parseInt(limit) || 20));
-    const offset = (currentPage - 1) * pageSize;
-    
-    // Query simples para contar
-    const countResult = await pool.query(`
-      SELECT COUNT(DISTINCT c.id) as total
-      FROM concursos c
-    `);
-    const total = parseInt(countResult.rows[0].total);
-    const totalPages = Math.ceil(total / pageSize);
-    
-    // Query para buscar dados
-    const dataResult = await pool.query(`
-      SELECT 
-        c.id, 
-        c.name, 
-        c.slug, 
-        COALESCE(b.display_name, b.name) as banca,
-        c.ano, 
-        c.nivel, 
-        c.data_prova, 
-        c.salario, 
-        c.numero_vagas, 
-        c.orgao, 
-        c.cidade, 
-        c.estado, 
-        c.edital_url,
-        c.contest_url, 
-        c.created_at,
-        COUNT(m.id) as total_subjects
-      FROM concursos c
-      LEFT JOIN bancas b ON c.banca_id = b.id
-      LEFT JOIN materias m ON m.contest_id = c.id
-      GROUP BY c.id, c.name, c.slug, b.display_name, b.name, c.ano, c.nivel, 
-               c.data_prova, c.salario, c.numero_vagas, c.orgao, c.cidade, 
-               c.estado, c.edital_url, c.contest_url, c.created_at
-      ORDER BY c.created_at DESC
-      LIMIT $1 OFFSET $2
-    `, [pageSize, offset]);
-    
-    return {
-      data: dataResult.rows,
-      pagination: {
-        page: currentPage,
-        limit: pageSize,
-        total,
-        totalPages,
-        hasNext: currentPage < totalPages,
-        hasPrev: currentPage > 1
-      }
-    };
-  });
+
 
   // Buscar detalhes de um concurso específico
   app.get('/admin/contests/:id', async (req, reply) => {

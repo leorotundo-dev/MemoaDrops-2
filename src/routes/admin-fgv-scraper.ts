@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { FgvScraper } from '../services/scrapers/fgv-scraper';
+import { FgvScraper } from '../services/scrapers/fgv-scraper.js';
 import { db } from '../db/index';
 
 export async function adminFgvScraperRoutes(fastify: FastifyInstance) {

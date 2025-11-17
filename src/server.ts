@@ -82,7 +82,7 @@ import { editalValidationRoutes } from './routes/admin-edital-validation.js';
 import { uploadPdfRoutes } from './routes/admin-upload-pdf.js';
 import { adminTestScraperRoutes } from './routes/admin-test-scraper.js';
 import { adminPopulateEditalUrlsRoutes } from './routes/admin-populate-edital-urls.js';
-import { adminScrapersRoutes } from './routes/admin-scrapers.js';
+// import { adminScrapersRoutes } from './routes/admin-scrapers.js'; // REMOVIDO - substituído por admin-bancas-scrapers.ts
 import adminRunMigration048Routes from './routes/admin-run-migration.js';
 import { adminIbadeScraperRoutes } from './routes/admin-ibade-scraper.js';
 import { adminFgvScraperRoutes } from './routes/admin-fgv-scraper.js';
@@ -224,7 +224,7 @@ await editalValidationRoutes(app);
 await uploadPdfRoutes(app);
 await adminTestScraperRoutes(app);
 await adminPopulateEditalUrlsRoutes(app);
-await adminScrapersRoutes(app);
+// await adminScrapersRoutes(app); // REMOVIDO - substituído por admin-bancas-scrapers.ts
 await adminBancasScrapersRoutes(app); // Rotas unificadas do sistema workers
 await app.register(adminRunMigrationsRoutes);
 await app.register(adminExecSqlRoutes);

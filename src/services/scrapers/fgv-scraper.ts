@@ -35,23 +35,23 @@ export class FgvScraper {
         timeout: 60000
       });
 
-      // Aguardar cards carregarem
-      await page.waitForSelector('.card', { timeout: 10000 });
+      // Aguardar links carregarem
+      await page.waitForSelector('a', { timeout: 10000 });
 
       // Extrair concursos
       const concursos = await page.evaluate(() => {
-        const cards = Array.from(document.querySelectorAll('.card'));
-        return cards.map(card => {
-          const link = card.querySelector('a');
-          const title = card.querySelector('h3, h4, .card-title');
-          
-          if (!link || !title) return null;
-          
-          return {
-            name: title.textContent?.trim() || '',
-            url: link.href || ''
-          };
-        }).filter(c => c !== null && c.name && c.url);
+        const links = Array.from(document.querySelectorAll('a'));
+        const concursoLinks = links.filter(link => {
+          const text = link.textContent || '';
+          return (text.includes('Concurso') || text.includes('Processo Seletivo')) &&
+                 !text.includes('Nosso portfólio') &&
+                 link.href.includes('/concursos/');
+        });
+        
+        return concursoLinks.map(link => ({
+          name: link.textContent?.trim() || '',
+          url: link.href || ''
+        })).filter(c => c.name && c.url);
       });
 
       return concursos as FgvConcurso[];

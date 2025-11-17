@@ -163,4 +163,42 @@ export async function registerAdminCosts(app: FastifyInstance){
     `,[scope, scope_key || null, period, amount_brl, notify_pct || [80,100,120]]);
     reply.send(r);
   });
+
+  // Endpoint para popular custos com dados de exemplo
+  app.post('/admin/costs/populate', { preHandler:[auth] }, async (_req:any, reply) => {
+    const events = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const ts = date.toISOString();
+      
+      events.push(
+        { ts, provider: 'openai', service: 'gpt-4', env: 'prod', feature: 'gerar_materias', unit: 'tokens', quantity: Math.floor(Math.random() * 50000) + 10000, unit_price: 0.00015 },
+        { ts, provider: 'internal', service: 'pdf_processor', env: 'prod', feature: 'processar_pdf', unit: 'documents', quantity: Math.floor(Math.random() * 10) + 2, unit_price: 0.50 },
+        { ts, provider: 'internal', service: 'scraper', env: 'prod', feature: 'harvester', unit: 'requests', quantity: Math.floor(Math.random() * 100) + 50, unit_price: 0.01 },
+        { ts, provider: 'openai', service: 'gpt-4', env: 'prod', feature: 'gerar_deck', unit: 'tokens', quantity: Math.floor(Math.random() * 30000) + 5000, unit_price: 0.00015 }
+      );
+    }
+    
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      for (const ev of events) {
+        const total = Number((ev.quantity * ev.unit_price).toFixed(6));
+        await client.query(`
+          INSERT INTO cost_events (ts, provider, service, env, feature, banca, resource_id, unit, quantity, currency, unit_price, total_cost, meta)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        `, [ev.ts, ev.provider, ev.service, ev.env, ev.feature, null, null, ev.unit, ev.quantity, 'BRL', ev.unit_price, total, {}]);
+      }
+      await client.query('COMMIT');
+      reply.send({ ok: true, message: `${events.length} eventos inseridos com sucesso` });
+    } catch (err: any) {
+      await client.query('ROLLBACK');
+      reply.status(500).send({ ok: false, error: err?.message || String(err) });
+    } finally {
+      client.release();
+    }
+  });
 }

@@ -176,7 +176,7 @@ class EditalWorker {
       });
       
       // Aguardar um pouco para garantir que o conteúdo carregou
-      await page.waitForTimeout(1000);
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Extrair link do PDF do edital de abertura
       const editalUrl = await page.evaluate(() => {

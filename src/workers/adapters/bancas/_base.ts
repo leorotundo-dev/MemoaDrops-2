@@ -37,7 +37,7 @@ async function fetchHtml(url:string, renderMode:'static'|'headless'){
   if (r.status && r.status >= 400) throw new Error(`HTTP ${r.status}`);
   const prob = detectBlock(r.html || '');
   if (prob) throw new Error(prob);
-  return { html, etag: r.etag, lastModified: r.lastModified };
+  return { html: r.html || '', etag: r.etag, lastModified: r.lastModified };
 }
 
 function buildPageUrl(base: string, pageNum: number, pattern: string, startFrom: number, itemsPerPage: number): string {

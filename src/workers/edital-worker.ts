@@ -1,5 +1,6 @@
 import { pool } from '../db/connection.js';
 import puppeteer, { Browser, Page } from 'puppeteer';
+import { extractEditalUrl } from './adapters/bancas/_edital-extractor.js';
 
 interface WorkerStatus {
   running: boolean;
@@ -128,7 +129,7 @@ class EditalWorker {
         console.log(`[Edital Worker] Processando: ${contest.name}`);
         
         try {
-          const editalUrl = await this.extractEditalUrl(contest.contest_url);
+          const editalUrl = await this.extractEditalUrlWithRetry(contest.contest_url, 3);
           
           if (editalUrl) {
             // Atualizar no banco
@@ -160,6 +161,26 @@ class EditalWorker {
   }
   
   /**
+   * Extrai URL do edital com retry automático
+   */
+  private async extractEditalUrlWithRetry(contestUrl: string, maxRetries: number): Promise<string | null> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[Edital Worker] Tentativa ${attempt}/${maxRetries}: ${contestUrl}`);
+        return await this.extractEditalUrl(contestUrl);
+      } catch (error: any) {
+        console.error(`[Edital Worker] Tentativa ${attempt} falhou:`, error.message);
+        if (attempt === maxRetries) {
+          return null;
+        }
+        // Aguardar antes de tentar novamente
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+    return null;
+  }
+  
+  /**
    * Extrai URL do edital de uma página de concurso
    */
   private async extractEditalUrl(contestUrl: string): Promise<string | null> {
@@ -175,54 +196,8 @@ class EditalWorker {
         timeout: 30000,
       });
       
-      // Aguardar um pouco para garantir que o conteúdo carregou
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Extrair link do PDF do edital de abertura
-      const editalUrl = await page.evaluate(() => {
-        const links = Array.from(document.querySelectorAll('a'));
-        
-        // Prioridade 1: Edital de Abertura específico
-        for (const link of links) {
-          const text = link.textContent?.trim().toLowerCase() || '';
-          const href = link.getAttribute('href') || '';
-          
-          if (
-            text.includes('edital') &&
-            text.includes('abertura') &&
-            !text.includes('acessível') &&
-            !text.includes('vlibras') &&
-            !text.includes('retificação') &&
-            !text.includes('retificacao') &&
-            href &&
-            href.includes('.pdf')
-          ) {
-            // Retornar URL absoluta
-            return new URL(href, window.location.href).href;
-          }
-        }
-        
-        // Prioridade 2: Qualquer edital em PDF (sem retificação)
-        for (const link of links) {
-          const text = link.textContent?.trim().toLowerCase() || '';
-          const href = link.getAttribute('href') || '';
-          
-          if (
-            text.includes('edital') &&
-            !text.includes('acessível') &&
-            !text.includes('vlibras') &&
-            !text.includes('retificação') &&
-            !text.includes('retificacao') &&
-            href &&
-            href.includes('.pdf')
-          ) {
-            return new URL(href, window.location.href).href;
-          }
-        }
-        
-        return null;
-      });
-      
+      // Usar extrator melhorado
+      const editalUrl = await extractEditalUrl(page, contestUrl);
       return editalUrl;
       
     } finally {

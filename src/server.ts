@@ -88,6 +88,7 @@ import { adminIbadeScraperRoutes } from './routes/admin-ibade-scraper.js';
 import { adminFgvScraperRoutes } from './routes/admin-fgv-scraper.js';
 import { adminFundatecPopulateRoutes } from './routes/admin-fundatec-populate.js';
 import { adminBancasScrapersRoutes } from './routes/admin-bancas-scrapers.js';
+import { adminEditalWorkerRoutes } from './routes/admin-edital-worker.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -226,6 +227,7 @@ await adminTestScraperRoutes(app);
 await adminPopulateEditalUrlsRoutes(app);
 // await adminScrapersRoutes(app); // REMOVIDO - substituído por admin-bancas-scrapers.ts
 await adminBancasScrapersRoutes(app); // Rotas unificadas do sistema workers
+await adminEditalWorkerRoutes(app); // Worker assíncrono de extração de editais
 await app.register(adminRunMigrationsRoutes);
 await app.register(adminExecSqlRoutes);
 await app.register(adminRunMigration048Routes);

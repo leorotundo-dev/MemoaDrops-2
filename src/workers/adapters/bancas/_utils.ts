@@ -38,11 +38,12 @@ export function sha256(s: string) {
  * - external_id: ID na fonte original
  * - name: título do concurso
  * - contest_url: URL do concurso
+ * - edital_url: URL do PDF do edital (extraído automaticamente)
  * - status: status do concurso
  * - informacoes_scraper: metadados JSON
  */
 export async function upsertContest(bancaId: number, externalId: string, data: any) {
-  const { title, url, status, raw } = data;
+  const { title, url, status, raw, editalUrl } = data;
   
   // Gerar slug a partir do título
   const slug = title
@@ -63,24 +64,26 @@ export async function upsertContest(bancaId: number, externalId: string, data: a
           external_id, 
           name, 
           slug,
-          contest_url, 
+          contest_url,
+          edital_url,
           status, 
           informacoes_scraper, 
           scraped_at,
           created_at, 
           updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW(), NOW())
         ON CONFLICT (banca_id, external_id)
         DO UPDATE SET 
           name = EXCLUDED.name,
           slug = EXCLUDED.slug,
           contest_url = EXCLUDED.contest_url,
+          edital_url = COALESCE(EXCLUDED.edital_url, concursos.edital_url),
           status = COALESCE(EXCLUDED.status, concursos.status),
           informacoes_scraper = COALESCE(EXCLUDED.informacoes_scraper, concursos.informacoes_scraper),
           scraped_at = NOW(),
           updated_at = NOW()
-      `, [bancaId, externalId, title, finalSlug, url, status || 'descoberto', raw || {}]);
+      `, [bancaId, externalId, title, finalSlug, url, editalUrl || null, status || 'descoberto', raw || {}]);
       break; // Sucesso, sair do loop
     } catch (error: any) {
       if (error.message?.includes('concursos_slug_key')) {

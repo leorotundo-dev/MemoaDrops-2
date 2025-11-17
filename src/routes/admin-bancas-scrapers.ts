@@ -1,5 +1,6 @@
-import type { FastifyInstance } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { pool } from '../db/connection.js';
+import { editalWorker } from '../workers/edital-worker.js';
 
 /**
  * Rotas administrativas unificadas para scrapers de bancas
@@ -51,6 +52,19 @@ export async function adminBancasScrapersRoutes(app: FastifyInstance) {
       }
       
       console.log(`[Admin] Scraper ${slug} concluído: ${result.found} concursos encontrados`);
+      
+      // Trigger automático: iniciar worker de editais se encontrou concursos
+      if (result.found > 0) {
+        const workerStatus = editalWorker.getStatus();
+        if (!workerStatus.running) {
+          console.log(`[Admin] Iniciando worker de editais automaticamente`);
+          editalWorker.start().catch(err => {
+            console.error('[Admin] Erro ao iniciar worker de editais:', err);
+          });
+        } else {
+          console.log(`[Admin] Worker de editais já está rodando`);
+        }
+      }
       
       return {
         success: true,

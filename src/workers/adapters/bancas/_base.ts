@@ -4,6 +4,14 @@ import { getIfChanged } from '../../utils/http_conditional.js';
 import { headlessFetch } from '../../utils/headless.js';
 import { detectBlock } from '../../utils/captcha.js';
 
+export interface CustomFilters {
+  textPattern?: RegExp;
+  exactText?: string;
+  excludeText?: string[];
+  urlMustContain?: string;
+  extractNameFromDOM?: boolean;
+}
+
 const UA = process.env.HARVEST_USER_AGENT || 'MemoDropsHarvester/1.0 (+contato)';
 
 function makeAbs(base:string, href:string){ try{ return new URL(href, base).href; }catch{ return href; } }
@@ -22,7 +30,7 @@ async function fetchHtml(url:string, renderMode:'static'|'headless'){
   return { html: r.html, etag: r.etag, lastModified: r.lastModified };
 }
 
-export async function runBanca(bancaId:number, base:string, domainPattern:RegExp, renderMode:'static'|'headless'){
+export async function runBanca(bancaId:number, base:string, domainPattern:RegExp, renderMode:'static'|'headless', customFilters?:CustomFilters){
   // 1) baixa listagem
   const { html } = await fetchHtml(base, renderMode);
   const $ = cheerio.load(html);
@@ -32,9 +40,31 @@ export async function runBanca(bancaId:number, base:string, domainPattern:RegExp
     const href = $(a).attr('href')||'';
     const text = $(a).text().trim();
     if (!href || !text) return;
-    if (!/concurso|inscri|edital|seletivo/i.test(text)) return;
+    
+    // Aplicar filtros customizados se fornecidos
+    if (customFilters) {
+      // Filtro de texto exato
+      if (customFilters.exactText && text !== customFilters.exactText) return;
+      
+      // Filtro de padrão de texto
+      if (customFilters.textPattern && !customFilters.textPattern.test(text)) return;
+      
+      // Filtro de exclusão de texto
+      if (customFilters.excludeText) {
+        const shouldExclude = customFilters.excludeText.some(excluded => text.includes(excluded));
+        if (shouldExclude) return;
+      }
+    } else {
+      // Filtro padrão se não houver filtros customizados
+      if (!/concurso|inscri|edital|seletivo/i.test(text)) return;
+    }
+    
     const url = makeAbs(base, href);
     if (!domainPattern.test(url)) return;
+    
+    // Validar URL se filtro customizado especificar
+    if (customFilters?.urlMustContain && !url.includes(customFilters.urlMustContain)) return;
+    
     items.push({ title: text, url });
   });
 
@@ -51,9 +81,9 @@ export async function runBanca(bancaId:number, base:string, domainPattern:RegExp
   return { bancaId, found: count };
 }
 
-export async function safeRunBanca(bancaId:number, base:string, pattern:RegExp, mode:'static'|'headless'){
+export async function safeRunBanca(bancaId:number, base:string, pattern:RegExp, mode:'static'|'headless', customFilters?:CustomFilters){
   try{
-    return await runBanca(bancaId, base, pattern, mode);
+    return await runBanca(bancaId, base, pattern, mode, customFilters);
   }catch(e:any){
     const reason = String(e?.message||e);
     await enqueueReview(bancaId, base, reason);
@@ -64,8 +94,8 @@ export async function safeRunBanca(bancaId:number, base:string, pattern:RegExp, 
 /**
  * Wrapper que aceita slug e busca ID numérico
  */
-export async function safeRunBancaBySlug(slug:string, base:string, pattern:RegExp, mode:'static'|'headless'){
+export async function safeRunBancaBySlug(slug:string, base:string, pattern:RegExp, mode:'static'|'headless', customFilters?:CustomFilters){
   const { getBancaId } = await import('./_utils.js');
   const bancaId = await getBancaId(slug);
-  return safeRunBanca(bancaId, base, pattern, mode);
+  return safeRunBanca(bancaId, base, pattern, mode, customFilters);
 }

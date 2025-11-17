@@ -87,6 +87,7 @@ import adminRunMigration048Routes from './routes/admin-run-migration.js';
 import { adminIbadeScraperRoutes } from './routes/admin-ibade-scraper.js';
 import { adminFgvScraperRoutes } from './routes/admin-fgv-scraper.js';
 import { adminFundatecPopulateRoutes } from './routes/admin-fundatec-populate.js';
+import { adminBancasScrapersRoutes } from './routes/admin-bancas-scrapers.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -224,6 +225,7 @@ await uploadPdfRoutes(app);
 await adminTestScraperRoutes(app);
 await adminPopulateEditalUrlsRoutes(app);
 await adminScrapersRoutes(app);
+await adminBancasScrapersRoutes(app); // Rotas unificadas do sistema workers
 await app.register(adminRunMigrationsRoutes);
 await app.register(adminExecSqlRoutes);
 await app.register(adminRunMigration048Routes);

@@ -7,7 +7,7 @@ export async function adminFundatecPopulateRoutes(fastify: FastifyInstance) {
     try {
       // Buscar concursos FUNDATEC sem edital_url
       const concursos = await db('concursos')
-        .where({ banca: 'FUNDATEC' })
+        .where({ banca_id: 62 }) // FUNDATEC banca_id
         .whereNull('edital_url')
         .select('id', 'name', 'contest_url');
 

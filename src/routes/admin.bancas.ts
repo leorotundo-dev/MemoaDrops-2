@@ -4,6 +4,68 @@ import { requireAdmin } from '../middleware/authorize.js';
 import { pool } from '../db/connection.js';
 
 export async function registerAdminBancaRoutes(app: FastifyInstance) {
+  // Buscar e salvar logos de todas as bancas (DEVE VIR ANTES DE /admin/bancas/:id)
+  app.post('/admin/bancas/fetch-logos', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
+    try {
+      const { rows: bancas } = await pool.query(`
+        SELECT id, name, short_name, display_name, website_url
+        FROM bancas
+        WHERE is_active = true
+        ORDER BY name
+      `);
+
+      const results = {
+        total: bancas.length,
+        success: 0,
+        failed: 0,
+        details: [] as any[]
+      };
+
+      for (const banca of bancas) {
+        try {
+          const { updateBancaLogo } = await import('../services/logo-fetcher.js');
+          const success = await updateBancaLogo(banca.id);
+          
+          if (success) {
+            results.success++;
+            results.details.push({
+              id: banca.id,
+              name: banca.display_name || banca.name,
+              status: 'success'
+            });
+          } else {
+            results.failed++;
+            results.details.push({
+              id: banca.id,
+              name: banca.display_name || banca.name,
+              status: 'not_found'
+            });
+          }
+          
+          // Pequeno delay para não sobrecarregar
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+        } catch (error: any) {
+          results.failed++;
+          results.details.push({
+            id: banca.id,
+            name: banca.display_name || banca.name,
+            status: 'error',
+            error: error.message
+          });
+        }
+      }
+
+      return {
+        success: true,
+        message: `Processamento concluído! ${results.success} logos salvos, ${results.failed} falharam.`,
+        results
+      };
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
   // Executar scraper de concursos para todas as bancas (DEVE VIR ANTES DE /admin/bancas/:id)
   app.post('/admin/bancas/scrape-all', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
     try {

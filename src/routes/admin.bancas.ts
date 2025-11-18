@@ -134,6 +134,61 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
         };
       }
 
+      // Filtrar URLs inválidos (documentos complementares)
+      const rejectPatterns = [
+        'lista-de-espera', 'lista_de_espera',
+        'anulacao', 'anulação',
+        'comunicado',
+        'resultado',
+        'gabarito',
+        'homologacao', 'homologação',
+        'retificacao', 'retificação',
+        'lgpd', 'termos-de-uso',
+        'liminar', 'judicial',
+        'boletim', 'suplementar',
+        'cronograma',
+        'convocacao', 'convocação',
+        'classificacao', 'classificação',
+        'nomeacao', 'nomeação',
+        'prorrogacao', 'prorrogação',
+        'suspensao', 'suspensão',
+        'cancelamento',
+        'adiamento',
+        'alteracao', 'alteração',
+        'errata',
+        'aviso',
+        'republicacao', 'republicação',
+        'ratificacao', 'ratificação',
+        'ata',
+        'recurso',
+        'impugnacao', 'impugnação',
+        'adendo'
+      ];
+
+      const validConcursos = concursos.filter(c => {
+        const url = c.edital_url.toLowerCase();
+        
+        // Rejeitar se contém padrões inválidos
+        if (rejectPatterns.some(pattern => url.includes(pattern))) {
+          console.log(`[Run Scrapers] ❌ Rejeitado (documento complementar): ${c.nome}`);
+          console.log(`[Run Scrapers]    URL: ${c.edital_url}`);
+          return false;
+        }
+        
+        return true;
+      });
+
+      console.log(`[Run Scrapers] 📊 Filtrados: ${validConcursos.length} válidos de ${concursos.length} totais`);
+      console.log(`[Run Scrapers] ❌ Rejeitados: ${concursos.length - validConcursos.length} documentos complementares`);
+
+      if (validConcursos.length === 0) {
+        return {
+          success: false,
+          message: `Nenhum edital válido encontrado. ${concursos.length} URLs rejeitados por serem documentos complementares.`,
+          stats: { total: concursos.length, filtered: 0, rejected: concursos.length }
+        };
+      }
+
       // Importar serviço de scraping
       const { scrapeContest } = await import('../services/scraper.js');
       
@@ -142,7 +197,7 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
       let failed = 0;
       const results = [];
 
-      for (const concurso of concursos) {
+      for (const concurso of validConcursos) {
         try {
           processed++;
           const result = await scrapeContest(concurso.edital_url);

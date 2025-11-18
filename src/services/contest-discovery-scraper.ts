@@ -250,10 +250,10 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
  * 1. O nome parece ser de um edital de abertura (não é retificação, resultado, etc.)
  * 2. Consegue encontrar e validar o PDF do edital
  */
-export async function saveDiscoveredContests(contests: DiscoveredContest[], options?: { skipPdfValidation?: boolean }): Promise<number> {
+export async function saveDiscoveredContests(contests: DiscoveredContest[]): Promise<number> {
   let savedCount = 0;
   let rejectedCount = 0;
-  const skipValidation = options?.skipPdfValidation || false;
+  const skipValidation = false; // SEMPRE validar PDFs para garantir qualidade
 
   for (const contest of contests) {
     try {
@@ -285,21 +285,18 @@ export async function saveDiscoveredContests(contests: DiscoveredContest[], opti
       const contestUrl = contest.contest_url || contest.dou_url;
       let pdfUrl = null;
 
-      // FILTRO 2: Tentar encontrar e validar o PDF do edital (opcional)
-      if (!skipValidation) {
-        console.log(`[Contest Discovery] 🔍 Procurando PDF para: ${contest.nome}`);
-        const pdfValidation = await validatePdfUrl(contestUrl);
-        
-        if (!pdfValidation.valid) {
-          console.log(`[Contest Discovery] ❌ Rejeitado por PDF inválido: ${contest.nome} - ${pdfValidation.message}`);
-          rejectedCount++;
-          continue;
-        }
-        
-        pdfUrl = pdfValidation.pdfUrl;
-      } else {
-        console.log(`[Contest Discovery] ⚡ Modo rápido: salvando sem validar PDF`);
+      // FILTRO 2: Validar o PDF do edital (OBRIGATÓRIO)
+      console.log(`[Contest Discovery] 🔍 Procurando e validando PDF para: ${contest.nome}`);
+      const pdfValidation = await validatePdfUrl(contestUrl);
+      
+      if (!pdfValidation.valid) {
+        console.log(`[Contest Discovery] ❌ Rejeitado por PDF inválido: ${contest.nome} - ${pdfValidation.message}`);
+        rejectedCount++;
+        continue;
       }
+      
+      pdfUrl = pdfValidation.pdfUrl;
+      console.log(`[Contest Discovery] ✅ PDF válido encontrado: ${pdfUrl}`);
 
       // Inserir novo concurso com schema novo
       // Gerar slug a partir do nome

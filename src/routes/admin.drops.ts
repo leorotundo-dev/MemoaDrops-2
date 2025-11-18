@@ -11,14 +11,14 @@ interface DropsQuery {
   limit?: string;
   materia?: string;
   dificuldade?: string;
-  aprovado?: string;
+  // aprovado?: string; // REMOVIDO - coluna não existe
   q?: string;
 }
 
 interface UpdateDropBody {
   titulo?: string;
   conteudo?: string;
-  aprovado?: boolean;
+  // aprovado?: boolean; // REMOVIDO - coluna não existe
 }
 
 export default async function (fastify: FastifyInstance) {
@@ -50,12 +50,12 @@ export default async function (fastify: FastifyInstance) {
         conditions.push(`d.dificuldade = $${paramIndex++}`);
       }
 
-      // Filtro por status de aprovação
-      if (request.query.aprovado) {
-        const aprovado = request.query.aprovado === 'aprovado';
-        params.push(aprovado);
-        conditions.push(`d.aprovado = $${paramIndex++}`);
-      }
+      // Filtro por status de aprovação - REMOVIDO (coluna não existe)
+      // if (request.query.aprovado) {
+      //   const aprovado = request.query.aprovado === 'aprovado';
+      //   params.push(aprovado);
+      //   conditions.push(`d.aprovado = $${paramIndex++}`);
+      // }
 
       // Busca por título
       if (request.query.q) {
@@ -91,8 +91,8 @@ export default async function (fastify: FastifyInstance) {
         subtopico_nome: string;
         dificuldade: string;
         tempo_estimado_minutos: number;
-        aprovado: boolean;
-        gerado_em: string;
+        // aprovado: boolean; // REMOVIDO - coluna não existe
+        created_at: string;
       }>(
         `
         SELECT 
@@ -103,8 +103,8 @@ export default async function (fastify: FastifyInstance) {
           COALESCE(s.nome, 'Sem subtópico') AS subtopico_nome,
           d.dificuldade,
           d.tempo_estimado_minutos,
-          d.aprovado,
-          d.gerado_em
+          -- d.aprovado, -- REMOVIDO - coluna não existe
+          d.created_at
         FROM drops d
         LEFT JOIN subtopicos s ON s.id = d.subtopico_id
         LEFT JOIN topicos t ON t.id = s.topico_id
@@ -148,7 +148,7 @@ export default async function (fastify: FastifyInstance) {
         exemplo_pratico: string | null;
         tecnicas_memorizacao: string[] | null;
         fontes: any[] | null;
-        aprovado: boolean;
+        // aprovado: boolean; // REMOVIDO - coluna não existe
         dificuldade: string;
         tempo_estimado_minutos: number;
         gerado_em: string;
@@ -160,8 +160,8 @@ export default async function (fastify: FastifyInstance) {
           conteudo,
           exemplo_pratico,
           tecnicas_memorizacao,
-          fontes,
-          aprovado,
+          fontes_utilizadas as fontes,
+          -- aprovado, -- REMOVIDO - coluna não existe
           dificuldade,
           tempo_estimado_minutos,
           gerado_em
@@ -209,10 +209,10 @@ export default async function (fastify: FastifyInstance) {
         updates.push(`conteudo = $${paramIndex++}`);
       }
 
-      if (request.body.aprovado !== undefined) {
-        params.push(request.body.aprovado);
-        updates.push(`aprovado = $${paramIndex++}`);
-      }
+      // if (request.body.aprovado !== undefined) { // REMOVIDO - coluna não existe
+      //   params.push(request.body.aprovado);
+      //   updates.push(`aprovado = $${paramIndex++}`);
+      // }
 
       if (updates.length === 0) {
         return reply.status(400).send({ erro: 'Nenhum campo para atualizar' });

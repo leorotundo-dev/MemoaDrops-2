@@ -46,8 +46,8 @@ import { devicesRoutes } from './routes/devices.js';
 import { importMultipartRoutes } from './routes/import-multipart.js';
 import { notificationPrefsRoutes } from './routes/notification-prefs.js';
 import { adminCostsRoutes } from './routes/admin.costs.js';
-import { registerAdminHierarchyRoutes } from './routes/admin.hierarchy.js';
-import { registerAdminDropsRoutes } from './routes/admin.drops.js';
+import adminHierarchyRoutes from './routes/admin.hierarchy.js';
+import adminDropsRoutes from './routes/admin.drops.js';
 import { registerSeedRoutes } from './routes/admin.seed.js';
 import { registerAdminBancaRoutes } from './routes/admin.bancas.js';
 import { registerScraperV2Routes } from './routes/admin.scraper-v2.js';
@@ -197,8 +197,8 @@ app.get('/concursos/:contestId/search', { preHandler: [rateLimit] }, async (req,
 // SSE (progresso)
 await jobsStreamRoutes(app);
 // Admin endpoints
-await registerAdminUserRoutes(app);   // Gestão de usuários
-await registerAdminScraperRoutes(app); // Gestão de scrapers
+// await registerAdminUserRoutes(app);   // Gestão de usuários - TODO: implementar
+// await registerAdminScraperRoutes(app); // Gestão de scrapers - TODO: implementar
 await registerAdminBancaRoutes(app);   // Gestão de bancas
 await registerScraperV2Routes(app);        // Scraper V2 (monolítico)
 await registerGerarDropsTopicosRoutes(app); // Geração de drops

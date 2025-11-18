@@ -2,8 +2,8 @@
 // Monolito simplificado: estrutura completa + 10 bancas principais.
 
 import OpenAI from "openai";
-import crypto from "crypto";
-import pdf from "pdf-parse";
+import * as crypto from "crypto";
+import * as pdf from "pdf-parse";
 import * as cheerio from "cheerio";
 
 export interface ConcursoLink {

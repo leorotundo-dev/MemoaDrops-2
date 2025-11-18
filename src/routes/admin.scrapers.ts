@@ -3,7 +3,17 @@ import { pool } from '../db/connection.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { requireAdmin } from '../middleware/authorize.js';
 
+import { getScraperStatus } from '../services/scraper-monitor.js';
+
 export async function registerAdminScraperRoutes(app: FastifyInstance) {
+
+  // Status do Scraper (Monitoramento)
+  app.get('/admin/scrapers/status', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
+    try {
+      const status = await getScraperStatus();
+      return status;
+    } catch (e:any) { return reply.code(500).send({ error: e.message }); }
+  });
   // Listar
   app.get('/admin/scrapers', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {
     try {

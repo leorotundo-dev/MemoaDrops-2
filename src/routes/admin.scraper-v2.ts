@@ -1,7 +1,7 @@
 // src/routes/admin.scraper-v2.ts
 import { FastifyInstance } from 'fastify';
 import { pool } from '../db/connection.js';
-import { runFullPipeline, BANKS_CONFIG } from '../services/scraper-monolith.js';
+import { runFullPipeline, BANKS_CONFIG } from '../services/scraper-monolith-v2.js';
 
 export async function registerScraperV2Routes(app: FastifyInstance) {
   

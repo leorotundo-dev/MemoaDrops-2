@@ -25,6 +25,7 @@ export interface BancoConfig {
   listLinkPatterns: string[];
   editalInclude?: string[];
   editalExclude?: string[];
+  usePuppeteer?: boolean;
 }
 
 export const BANKS_CONFIG: Record<string, BancoConfig> = {
@@ -37,10 +38,11 @@ export const BANKS_CONFIG: Record<string, BancoConfig> = {
   },
   cebraspe: {
     name: "Cebraspe",
-    listUrl: "https://www.cebraspe.org.br/concursos",
+    listUrl: "https://www.cebraspe.org.br/concursos/inscricoes-abertas/",
     listLinkPatterns: ["/concursos/"],
     editalInclude: ["edital"],
-    editalExclude: ["resultado", "gabarito"]
+    editalExclude: ["resultado", "gabarito"],
+    usePuppeteer: true  // Site React/SPA
   }
 };
 
@@ -48,12 +50,38 @@ export class BaseScraper {
   constructor(public config: BancoConfig) {}
 
   async fetchHtml(url: string): Promise<string> {
+    if (this.config.usePuppeteer) {
+      return this.fetchHtmlWithPuppeteer(url);
+    }
+    
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (MemoDropsBot)" },
       cache: "no-store"
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} ao acessar ${url}`);
     return res.text();
+  }
+  
+  async fetchHtmlWithPuppeteer(url: string): Promise<string> {
+    const puppeteer = await import('puppeteer');
+    const browser = await puppeteer.default.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    try {
+      const page = await browser.newPage();
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+      
+      // Aguardar conteúdo carregar (React)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      const html = await page.content();
+      return html;
+    } finally {
+      await browser.close();
+    }
   }
 
   extractConcursoLinks(html: string, baseUrl: string): ConcursoLink[] {

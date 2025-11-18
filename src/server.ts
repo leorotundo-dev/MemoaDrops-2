@@ -49,6 +49,7 @@ import { adminCostsRoutes } from './routes/admin.costs.js';
 import { registerAdminUserRoutes } from './routes/admin-users.js';
 import { registerAdminScraperRoutes } from './routes/admin.scrapers.js';
 import { registerAdminBancaRoutes } from './routes/admin.bancas.js';
+import { registerScraperV2Routes } from './routes/admin.scraper-v2.js';
 import { registerGerarDropsTopicosRoutes } from './routes/admin.gerar-drops-topicos.js';
 import { registerBancaRoutes } from './routes/bancas.js';
 import registerAdminInsertBancasRoutes from './routes/admin.insert-bancas.js';
@@ -194,6 +195,7 @@ await jobsStreamRoutes(app);
 await registerAdminUserRoutes(app);   // Gestão de usuários
 await registerAdminScraperRoutes(app); // Gestão de scrapers
 await registerAdminBancaRoutes(app);   // Gestão de bancas
+await registerScraperV2Routes(app);        // Scraper V2 (monolítico)
 await registerGerarDropsTopicosRoutes(app); // Geração de drops
 await registerAdminInsertBancasRoutes(app); // Inserção em massa de bancas
 await registerAdminDeleteDuplicatesRoutes(app); // Deletar bancas duplicadas

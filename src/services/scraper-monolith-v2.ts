@@ -359,18 +359,54 @@ export async function processPdf(url: string) {
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export function recortarTrechosRelevantes(text: string): string {
+  // Padrões para encontrar seções relevantes
   const blocos = [
-    /disposições preliminares[\s\S]*?(?=das inscrições)/i,
-    /conteúdo programático[\s\S]*/i,
-    /provas[\s\S]*?(?=conteúdo programático)/i
+    // Conteúdo programático (MAIS IMPORTANTE)
+    /conteúdo\s+programático[\s\S]*/i,
+    /programa[\s\S]*?(?=anexo|bibliografia)/i,
+    /conhecimentos\s+específicos[\s\S]*?(?=anexo|bibliografia)/i,
+    /disciplinas[\s\S]*?(?=anexo|bibliografia)/i,
+    // Informações gerais
+    /disposições\s+preliminares[\s\S]*?(?=das\s+inscrições)/i,
+    /das\s+provas[\s\S]*?(?=conteúdo|programa)/i
   ];
+  
   let final = "";
+  let foundContent = false;
+  
   for (const r of blocos) {
     const m = text.match(r);
-    if (m) final += m[0] + "\n---\n";
+    if (m) {
+      final += m[0] + "\n---\n";
+      foundContent = true;
+    }
   }
-  if (!final) return text.slice(0, 10000);
-  return final.slice(0, 12000);
+  
+  // Se não encontrou nada, tenta buscar por padrões mais genéricos
+  if (!foundContent) {
+    // Busca por listas numeradas ou com marcadores (comum em editais)
+    const patterns = [
+      /\d+\.\s+[A-ZÁ-Ú][\s\S]{100,}/,  // Listas numeradas
+      /[A-ZÁ-Ú\s]{3,}:\s*\n[\s\S]{100,}/  // Títulos seguidos de conteúdo
+    ];
+    
+    for (const p of patterns) {
+      const m = text.match(p);
+      if (m) {
+        final += m[0];
+        break;
+      }
+    }
+  }
+  
+  // Se ainda não encontrou nada, retorna o meio do documento (onde geralmente está o conteúdo)
+  if (!final) {
+    const middle = Math.floor(text.length / 3);
+    return text.slice(middle, middle + 15000);
+  }
+  
+  // Limita o tamanho para não exceder o limite do modelo
+  return final.slice(0, 15000);
 }
 
 export async function extractWithOpenAI(pdfText: string): Promise<any> {
@@ -378,17 +414,53 @@ export async function extractWithOpenAI(pdfText: string): Promise<any> {
   const messages = [{
     role: "user" as const,
     content: `Você é especialista em concursos públicos no Brasil.
-Extraia APENAS um JSON com dados do edital (órgão, banca, cargos, vagas, salários, datas principais, disciplinas e tópicos de conteúdo programático).
-Se algo não existir, use null ou lista vazia.
 
-TEXTO:
+Extraia APENAS um JSON válido com a seguinte estrutura:
+
+{
+  "orgao": "nome do órgão",
+  "banca": "nome da banca organizadora",
+  "cargos": ["cargo 1", "cargo 2"],
+  "vagas": "número de vagas ou null",
+  "salario": "faixa salarial ou null",
+  "inscricoes_inicio": "data ou null",
+  "inscricoes_fim": "data ou null",
+  "prova_data": "data ou null",
+  "disciplinas": [
+    {
+      "nome": "Nome da Disciplina/Matéria",
+      "topicos": [
+        {
+          "nome": "Nome do Tópico Principal",
+          "subtopicos": [
+            "Subtópico 1",
+            "Subtópico 2",
+            "Subtópico 3"
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+**INSTRUÇÕES IMPORTANTES:**
+1. A seção "disciplinas" é a MAIS IMPORTANTE - extraia com máximo detalhamento
+2. Cada disciplina deve ter nome claro (ex: "Língua Portuguesa", "Direito Constitucional")
+3. Cada tópico deve representar um tema principal da disciplina
+4. Subtópicos devem ser os itens específicos listados no conteúdo programático
+5. Se não houver hierarquia clara, coloque todos os itens como subtópicos de um tópico genérico
+6. Mantenha a nomenclatura exata do edital
+7. Se algo não existir, use null ou lista vazia []
+8. Retorne APENAS o JSON, sem texto adicional
+
+TEXTO DO EDITAL:
 ${trecho}`
   }];
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages,
-    max_tokens: 4000,
+    max_tokens: 8000,  // Aumentado para permitir hierarquias mais complexas
     temperature: 0
   });
 

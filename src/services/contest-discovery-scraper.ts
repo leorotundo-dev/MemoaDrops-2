@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import { pool } from '../db/connection.js';
 import { scrapeBancaContestsWithPuppeteer } from './puppeteer-scraper.js';
 import { isValidEditalText, validatePdfUrl, extractPdfFromContestPage } from './edital-validator.js';
+import { extractContestDataFromPdf, updateContestWithExtractedData } from './pdf-data-extractor.js';
 
 /**
  * Interface para um concurso descoberto
@@ -307,15 +308,28 @@ export async function saveDiscoveredContests(contests: DiscoveredContest[], opti
         .replace(/[^a-z0-9]+/g, '-') // Substitui caracteres especiais por hífen
         .replace(/^-+|-+$/g, ''); // Remove hífens do início e fim
       
-      await pool.query(
-        'INSERT INTO concursos (name, slug, banca, banca_id, contest_url, edital_url, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
+      const result = await pool.query(
+        'INSERT INTO concursos (name, slug, banca, banca_id, contest_url, edital_url, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING id',
         [contest.nome, slug, bancaName, contest.banca_id, contestUrl, pdfUrl]
       );
 
+      const contestId = result.rows[0].id;
+
       savedCount++;
-      console.log(`[Contest Discovery] ✅ Concurso salvo: ${contest.nome}`);
+      console.log(`[Contest Discovery] ✅ Concurso salvo: ${contest.nome} (ID: ${contestId})`);
       if (pdfUrl) {
         console.log(`[Contest Discovery] 📄 PDF: ${pdfUrl}`);
+        
+        // Extrair dados automaticamente do PDF
+        try {
+          console.log(`[Contest Discovery] 🤖 Extraindo dados do PDF...`);
+          const extractedData = await extractContestDataFromPdf(pdfUrl);
+          await updateContestWithExtractedData(contestId, extractedData, pool);
+          console.log(`[Contest Discovery] ✅ Dados extraídos e salvos automaticamente`);
+        } catch (extractError: any) {
+          console.error(`[Contest Discovery] ⚠️  Erro ao extrair dados do PDF (concurso salvo, mas sem dados adicionais): ${extractError.message}`);
+          // Não falhar o salvamento do concurso se a extração falhar
+        }
       }
 
     } catch (error) {

@@ -91,7 +91,7 @@ import { adminFundatecPopulateRoutes } from './routes/admin-fundatec-populate.js
 import { adminBancasScrapersRoutes } from './routes/admin-bancas-scrapers.js';
 import { adminEditalWorkerRoutes } from './routes/admin-edital-worker.js';
 import adminIncidenciaRoutes from './routes/admin.incidencia.js';
-import adminGerarDropsLoteRoutes from './routes/admin.gerar-drops-lote.js';
+// import adminGerarDropsLoteRoutes from './routes/admin.gerar-drops-lote.js'; // REMOVIDO - duplicado com admin.gerar-drops-topicos.ts
 import adminHierarchyRoutes from './routes/admin.hierarchy.js';
 import adminDropsRoutes from './routes/admin.drops.js';
 
@@ -242,7 +242,7 @@ await adminFgvScraperRoutes(app);
 await adminFundatecPopulateRoutes(app);
 await registerTutorRoutes(app);
 await app.register(adminIncidenciaRoutes);
-await app.register(adminGerarDropsLoteRoutes);
+// await app.register(adminGerarDropsLoteRoutes); // REMOVIDO - duplicado com admin.gerar-drops-topicos.ts
 await app.register(adminHierarchyRoutes);
 await app.register(adminDropsRoutes);
 

@@ -93,8 +93,6 @@ import { adminBancasScrapersRoutes } from './routes/admin-bancas-scrapers.js';
 import { adminEditalWorkerRoutes } from './routes/admin-edital-worker.js';
 import adminIncidenciaRoutes from './routes/admin.incidencia.js';
 // import adminGerarDropsLoteRoutes from './routes/admin.gerar-drops-lote.js'; // REMOVIDO - duplicado com admin.gerar-drops-topicos.ts
-import adminHierarchyRoutes from './routes/admin.hierarchy.js';
-import adminDropsRoutes from './routes/admin.drops.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 

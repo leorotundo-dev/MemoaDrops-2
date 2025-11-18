@@ -92,7 +92,7 @@ export default async function (fastify: FastifyInstance) {
         dificuldade: string;
         tempo_estimado_minutos: number;
         // aprovado: boolean; // REMOVIDO - coluna não existe
-        created_at: string;
+        gerado_em: string;
       }>(
         `
         SELECT 
@@ -104,7 +104,7 @@ export default async function (fastify: FastifyInstance) {
           d.dificuldade,
           d.tempo_estimado_minutos,
           -- d.aprovado, -- REMOVIDO - coluna não existe
-          d.created_at
+          d.gerado_em
         FROM drops d
         LEFT JOIN subtopicos s ON s.id = d.subtopico_id
         LEFT JOIN topicos t ON t.id = s.topico_id

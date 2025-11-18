@@ -15,8 +15,8 @@ export async function adminTestScraperRoutes(app: FastifyInstance) {
       const contests = await scrapeBancaContests(bancaIdNum);
       console.log(`[Test Scraper] Encontrados ${contests.length} concursos`);
       
-      // Salvar concursos (modo rápido sem validação de PDF)
-      const savedCount = await saveDiscoveredContests(contests, { skipPdfValidation: true });
+      // Salvar concursos (com validação obrigatória de PDF)
+      const savedCount = await saveDiscoveredContests(contests);
       
       // Atualizar contador
       await updateBancaContestCount(bancaIdNum);

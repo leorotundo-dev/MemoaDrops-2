@@ -90,6 +90,10 @@ import { adminFgvScraperRoutes } from './routes/admin-fgv-scraper.js';
 import { adminFundatecPopulateRoutes } from './routes/admin-fundatec-populate.js';
 import { adminBancasScrapersRoutes } from './routes/admin-bancas-scrapers.js';
 import { adminEditalWorkerRoutes } from './routes/admin-edital-worker.js';
+import adminIncidenciaRoutes from './routes/admin.incidencia.js';
+import adminGerarDropsLoteRoutes from './routes/admin.gerar-drops-lote.js';
+import adminHierarchyRoutes from './routes/admin.hierarchy.js';
+import adminDropsRoutes from './routes/admin.drops.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -237,6 +241,10 @@ await adminIbadeScraperRoutes(app);
 await adminFgvScraperRoutes(app);
 await adminFundatecPopulateRoutes(app);
 await registerTutorRoutes(app);
+await app.register(adminIncidenciaRoutes);
+await app.register(adminGerarDropsLoteRoutes);
+await app.register(adminHierarchyRoutes);
+await app.register(adminDropsRoutes);
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

@@ -1,6 +1,6 @@
 // src/routes/admin.gerar-drops-lote.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { pool } from '../db/index.js';
+import { pool } from '../db/connection.js';
 import { calcularIncidenciaPorBanca } from '../services/incidencia-analyzer.js';
 import { randomUUID } from 'crypto';
 

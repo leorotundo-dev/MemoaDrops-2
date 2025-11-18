@@ -1,6 +1,6 @@
 // src/routes/admin.hierarchy.ts
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { pool } from '../db/index.js';
+import { pool } from '../db/connection.js';
 
 interface HierarchyParams {
   id: string;

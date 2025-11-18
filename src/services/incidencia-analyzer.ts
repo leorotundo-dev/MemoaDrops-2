@@ -1,5 +1,5 @@
 // src/services/incidencia-analyzer.ts
-import { pool } from '../db/index.js';
+import { pool } from '../db/connection.js';
 
 export interface IncidenciaResult {
   subtopico_id: string;

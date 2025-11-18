@@ -34,6 +34,13 @@ export const BANKS_CONFIG: Record<string, BancoConfig> = {
     listLinkPatterns: ["/concursos/"],
     editalInclude: ["edital"],
     editalExclude: ["resultado", "gabarito", "retificação", "retificacao"]
+  },
+  cebraspe: {
+    name: "Cebraspe",
+    listUrl: "https://www.cebraspe.org.br/concursos",
+    listLinkPatterns: ["/concursos/"],
+    editalInclude: ["edital"],
+    editalExclude: ["resultado", "gabarito"]
   }
 };
 

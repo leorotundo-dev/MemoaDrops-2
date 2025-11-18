@@ -3,7 +3,7 @@
 
 import OpenAI from "openai";
 import * as crypto from "crypto";
-import * as pdf from "pdf-parse";
+import pdfParse from "pdf-parse";
 import * as cheerio from "cheerio";
 
 export interface ConcursoLink {
@@ -199,7 +199,7 @@ export function hashPdf(buf: Buffer): string {
 }
 
 export async function readPdfText(buf: Buffer, maxPages = 3): Promise<string> {
-  const data = await pdf(buf);
+  const data = await pdfParse(buf);
   const approxChars = maxPages * 6000;
   return data.text.slice(0, approxChars);
 }

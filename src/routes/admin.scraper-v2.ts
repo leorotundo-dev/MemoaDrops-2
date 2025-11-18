@@ -105,9 +105,7 @@ export async function registerScraperV2Routes(app: FastifyInstance) {
                 if (!subtopico) continue;
 
                 // Se subtopico é string, usar diretamente; se é objeto, pegar o nome
-                const subtop
-
-icoNome = typeof subtopico === 'string' ? subtopico : subtopico.nome;
+                const subtopicoNome = typeof subtopico === 'string' ? subtopico : subtopico.nome;
                 if (!subtopicoNome) continue;
 
                 // Criar subtópico

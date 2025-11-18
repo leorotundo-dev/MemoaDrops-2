@@ -45,9 +45,9 @@ import { totpRoutes } from './routes/totp.js';
 import { devicesRoutes } from './routes/devices.js';
 import { importMultipartRoutes } from './routes/import-multipart.js';
 import { notificationPrefsRoutes } from './routes/notification-prefs.js';
-import { adminCostsRoutes } from './routes/admin.costs.js';
-import { registerAdminUserRoutes } from './routes/admin-users.js';
-import { registerAdminScraperRoutes } from './routes/admin.scrapers.js';
+import { adminCostsRoutes } from './routes/admin.costs.jimport { registerAdminHierarchyRoutes } from './routes/admin.hierarchy.js';
+import { registerAdminDropsRoutes } from './routes/admin.drops.js';
+import { registerSeedRoutes } from './routes/admin.seed.js';
 import { registerAdminBancaRoutes } from './routes/admin.bancas.js';
 import { registerScraperV2Routes } from './routes/admin.scraper-v2.js';
 import { registerGerarDropsTopicosRoutes } from './routes/admin.gerar-drops-topicos.js';
@@ -245,6 +245,7 @@ await app.register(adminIncidenciaRoutes);
 // await app.register(adminGerarDropsLoteRoutes); // REMOVIDO - duplicado com admin.gerar-drops-topicos.ts
 await app.register(adminHierarchyRoutes);
 await app.register(adminDropsRoutes);
+await registerSeedRoutes(app); // Rota temporária para popular dados de teste
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

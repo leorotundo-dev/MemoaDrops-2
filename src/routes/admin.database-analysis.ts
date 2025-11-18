@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { pool } from '../db/index.js';
+import { pool } from '../db/connection.js';
 
 export async function adminDatabaseAnalysisRoutes(app: FastifyInstance) {
   

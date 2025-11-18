@@ -8,39 +8,6 @@ export async function adminDatabaseAnalysisRoutes(app: FastifyInstance) {
     try {
       console.log('[DB Analysis] Iniciando análise de URLs inválidos...');
       
-      const invalidPatterns = [
-        '%lista%espera%',
-        '%anula%',
-        '%comunicado%',
-        '%resultado%',
-        '%gabarito%',
-        '%homologa%',
-        '%retifica%',
-        '%lgpd%',
-        '%termos%uso%',
-        '%liminar%',
-        '%judicial%',
-        '%boletim%',
-        '%suplementar%',
-        '%cronograma%',
-        '%convoca%',
-        '%classifica%',
-        '%nomea%',
-        '%prorroga%',
-        '%suspens%',
-        '%cancelamento%',
-        '%adiamento%',
-        '%altera%',
-        '%errata%',
-        '%aviso%',
-        '%republica%',
-        '%ratifica%',
-        '%ata%',
-        '%recurso%',
-        '%impugna%',
-        '%adendo%'
-      ];
-      
       // 1. Estatísticas gerais
       const { rows: stats } = await pool.query(`
         SELECT 
@@ -51,7 +18,6 @@ export async function adminDatabaseAnalysisRoutes(app: FastifyInstance) {
       `);
       
       // 2. Contar URLs inválidos
-      const whereConditions = invalidPatterns.map(() => 'LOWER(edital_url) LIKE ?').join(' OR ');
       const { rows: invalidCount } = await pool.query(`
         SELECT 
           COUNT(*) as total_invalidos,
@@ -59,8 +25,16 @@ export async function adminDatabaseAnalysisRoutes(app: FastifyInstance) {
         FROM concursos
         WHERE edital_url IS NOT NULL 
           AND edital_url != ''
-          AND (${whereConditions.replace(/\?/g, (match, offset) => `$${Math.floor(offset / 23) + 1}`)})
-      `, invalidPatterns);
+          AND (
+            LOWER(edital_url) LIKE '%lista%espera%' OR
+            LOWER(edital_url) LIKE '%anula%' OR
+            LOWER(edital_url) LIKE '%comunicado%' OR
+            LOWER(edital_url) LIKE '%resultado%' OR
+            LOWER(edital_url) LIKE '%retifica%' OR
+            LOWER(edital_url) LIKE '%gabarito%' OR
+            LOWER(edital_url) LIKE '%homologa%'
+          )
+      `);
       
       // 3. URLs inválidos por banca
       const { rows: bancasAffected } = await pool.query(`

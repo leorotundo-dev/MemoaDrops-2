@@ -43,6 +43,62 @@ export const BANKS_CONFIG: Record<string, BancoConfig> = {
     editalInclude: ["edital"],
     editalExclude: ["resultado", "gabarito"],
     usePuppeteer: true  // Site React/SPA
+  },
+  fcc: {
+    name: "FCC",
+    listUrl: "https://www.fcc.org.br/concursos/",
+    listLinkPatterns: ["/concursos/"],
+    editalInclude: ["edital"],
+    editalExclude: ["resultado", "gabarito"]
+  },
+  vunesp: {
+    name: "Vunesp",
+    listUrl: "https://www.vunesp.com.br/",
+    listLinkPatterns: ["VUNESP_Online", "VSOL"],
+    editalInclude: ["edital"],
+    editalExclude: ["resultado", "gabarito"]
+  },
+  quadrix: {
+    name: "Quadrix",
+    listUrl: "https://site.quadrix.org.br/todos-os-concursos.aspx",
+    listLinkPatterns: ["concurso"],
+    editalInclude: ["edital"],
+    editalExclude: ["resultado", "gabarito"]
+  },
+  aocp: {
+    name: "AOCP",
+    listUrl: "https://www.institutoaocp.org.br/concursos.jsp",
+    listLinkPatterns: ["concurso"],
+    editalInclude: ["edital"],
+    editalExclude: ["resultado", "gabarito"]
+  },
+  ibfc: {
+    name: "IBFC",
+    listUrl: "https://concursos.ibfc.org.br/",
+    listLinkPatterns: ["concurso"],
+    editalInclude: ["edital"],
+    editalExclude: ["resultado", "gabarito"]
+  },
+  iades: {
+    name: "IADES",
+    listUrl: "https://www.iades.com.br/inscricao/ProcessoSeletivo.aspx",
+    listLinkPatterns: ["ProcessoSeletivo"],
+    editalInclude: ["edital"],
+    editalExclude: ["resultado", "gabarito", "homolog"]
+  },
+  fundatec: {
+    name: "Fundatec",
+    listUrl: "https://fundatec.org.br/portal/concursos/index.php",
+    listLinkPatterns: ["detalhe"],
+    editalInclude: ["edital"],
+    editalExclude: ["resultado", "gabarito"]
+  },
+  idecan: {
+    name: "IDECAN",
+    listUrl: "https://idecan.selecao.net.br/informacoes/",
+    listLinkPatterns: ["informacoes"],
+    editalInclude: ["edital"],
+    editalExclude: ["resultado", "gabarito"]
   }
 };
 

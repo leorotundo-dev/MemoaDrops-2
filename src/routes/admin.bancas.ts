@@ -111,6 +111,91 @@ export async function registerAdminBancaRoutes(app: FastifyInstance) {
       return reply.status(500).send({ error: e.message });
     }
   });
+  
+  // Executar scrapers de editais para todas as bancas ativas (DEVE VIR ANTES DE /admin/bancas/:id)
+  app.post('/admin/bancas/run-scrapers', { preHandler: [authenticate, requireAdmin] }, async (_req, reply) => {
+    try {
+      // Buscar todas as bancas ativas que possuem concursos com edital_url
+      const { rows: concursos } = await pool.query(`
+        SELECT c.id, c.nome, c.edital_url, c.banca_id, b.display_name as banca_name
+        FROM concursos c
+        INNER JOIN bancas b ON b.id = c.banca_id
+        WHERE b.is_active = true 
+          AND c.edital_url IS NOT NULL 
+          AND c.edital_url != ''
+        ORDER BY c.created_at DESC
+        LIMIT 50
+      `);
+
+      if (concursos.length === 0) {
+        return {
+          success: false,
+          message: 'Nenhum concurso com edital encontrado para processar'
+        };
+      }
+
+      // Importar serviço de scraping
+      const { scrapeContest } = await import('../services/scraper.js');
+      
+      let processed = 0;
+      let success = 0;
+      let failed = 0;
+      const results = [];
+
+      for (const concurso of concursos) {
+        try {
+          processed++;
+          const result = await scrapeContest(concurso.edital_url);
+          
+          if (result && result.materias && result.materias.length > 0) {
+            // Salvar hierarquia extraída
+            await pool.query(
+              'UPDATE concursos SET hierarchy = $1, updated_at = NOW() WHERE id = $2',
+              [JSON.stringify(result), concurso.id]
+            );
+            success++;
+            results.push({
+              concurso_id: concurso.id,
+              nome: concurso.nome,
+              banca: concurso.banca_name,
+              status: 'success',
+              materias_found: result.materias.length
+            });
+          } else {
+            failed++;
+            results.push({
+              concurso_id: concurso.id,
+              nome: concurso.nome,
+              banca: concurso.banca_name,
+              status: 'no_content'
+            });
+          }
+        } catch (err: any) {
+          failed++;
+          results.push({
+            concurso_id: concurso.id,
+            nome: concurso.nome,
+            banca: concurso.banca_name,
+            status: 'error',
+            error: err.message
+          });
+        }
+        
+        // Pequeno delay para não sobrecarregar
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      return {
+        success: true,
+        message: `Scrapers executados! ${success} sucessos, ${failed} falhas de ${processed} processados.`,
+        stats: { processed, success, failed },
+        results
+      };
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message });
+    }
+  });
+
 
   // Executar scraper de uma banca específica
   app.post('/admin/bancas/:id/scrape', { preHandler: [authenticate, requireAdmin] }, async (request, reply) => {

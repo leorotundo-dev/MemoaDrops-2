@@ -66,7 +66,7 @@ export class BaseScraper {
   extractEditaisFromHtml(html: string, concursoUrl: string): EditalLink[] {
     const $ = cheerio.load(html);
     const include = (this.config.editalInclude ?? ["edital", ".pdf"]).map(t => t.toLowerCase());
-    const exclude = (this.config.editalExclude ?? ["gabarito","resultado","homolog","classificação","retificação","retificacao","audiência","audiencia","cancelamento","comunicado"]).map(t => t.toLowerCase());
+    const exclude = (this.config.editalExclude ?? ["gabarito","resultado","homolog","classificação","audiência","audiencia","cancelamento","comunicado"]).map(t => t.toLowerCase());
     const out: Record<string, EditalLink> = {};
     $("a[href]").each((_, el) => {
       const href = $(el).attr("href") || "";
@@ -124,15 +124,40 @@ export async function downloadPdf(url: string): Promise<Buffer> {
     
     // Procurar link direto para PDF na página
     let pdfUrl = null;
+    const candidates: Array<{href: string, text: string, score: number}> = [];
+    
     $('a[href$=".pdf"]').each((_, el) => {
       const href = $(el).attr('href');
       const text = $(el).text().toLowerCase();
-      // Priorizar links que parecem ser o edital principal
-      if (href && !text.includes('retifica') && !text.includes('gabarito')) {
-        pdfUrl = href;
-        return false; // break
+      if (!href) return;
+      
+      let score = 0;
+      
+      // Pontos positivos
+      if (text.includes('edital')) score += 10;
+      if (text.includes('abertura')) score += 5;
+      if (text.includes('completo') || text.includes('completa')) score += 5;
+      if (text.includes('01/2024') || text.includes('02/2024')) score += 3;
+      
+      // Pontos negativos
+      if (text.includes('gabarito')) score -= 100;
+      if (text.includes('resultado')) score -= 100;
+      if (text.includes('homolog')) score -= 100;
+      if (text.includes('classificação')) score -= 100;
+      if (text.includes('isencao') || text.includes('isenção')) score -= 50;
+      if (text.includes('pcd') || text.includes('pne')) score -= 50;
+      if (text.includes('preliminar') || text.includes('definitivo')) score -= 30;
+      
+      if (score > 0) {
+        candidates.push({ href, text, score });
       }
     });
+    
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => b.score - a.score);
+      pdfUrl = candidates[0].href;
+      console.log(`[PDF Selection] Escolhido: ${candidates[0].text} (score: ${candidates[0].score})`);
+    }
     
     // Se não encontrou, pegar retificação que contém edital completo
     if (!pdfUrl) {
@@ -209,10 +234,25 @@ export const PDF_KEYWORDS = {
 
 export function classifyPdf(text: string): string {
   const lower = text.toLowerCase();
+  
+  // Prioridade: gabarito e resultado são excludentes
   if (PDF_KEYWORDS.gabarito.some(k => lower.includes(k))) return "gabarito";
   if (PDF_KEYWORDS.resultado.some(k => lower.includes(k))) return "resultado";
-  if (PDF_KEYWORDS.retificacao.some(k => lower.includes(k))) return "retificacao";
+  
+  // Se tem conteúdo programático, é edital válido (mesmo sendo retificação)
+  const hasConteudoProgramatico = lower.includes('conteúdo programático') || 
+                                   lower.includes('conteudo programatico') ||
+                                   lower.includes('programa das provas') ||
+                                   lower.includes('anexo') && lower.includes('disciplina');
+  
+  if (hasConteudoProgramatico) return "edital_de_abertura";
+  
+  // Se tem palavras-chave de edital de abertura
   if (PDF_KEYWORDS.editalAbertura.some(k => lower.includes(k))) return "edital_de_abertura";
+  
+  // Retificação sem conteúdo programático
+  if (PDF_KEYWORDS.retificacao.some(k => lower.includes(k))) return "retificacao";
+  
   return "outro";
 }
 
@@ -289,8 +329,13 @@ export async function runFullPipeline(bancaKey: string) {
 
       for (const edital of editais) {
         try {
+          console.log(`[${cfg.name}] processando edital: ${edital.titulo}`);
           const pdfInfo = await processPdf(edital.url);
-          if (pdfInfo.tipo !== "edital_de_abertura") continue;
+          console.log(`[${cfg.name}] tipo do PDF: ${pdfInfo.tipo}`);
+          if (pdfInfo.tipo !== "edital_de_abertura") {
+            console.log(`[${cfg.name}] pulando ${pdfInfo.tipo}: ${edital.titulo}`);
+            continue;
+          }
           
           const buf = await downloadPdf(edital.url);
           const fullText = await readPdfText(buf, 6);
@@ -313,3 +358,6 @@ export async function runFullPipeline(bancaKey: string) {
   }
   return saida;
 }
+
+// Alias para compatibilidade
+export const runScraperForBank = runFullPipeline;

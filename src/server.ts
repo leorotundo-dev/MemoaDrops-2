@@ -49,6 +49,7 @@ import { adminCostsRoutes } from './routes/admin.costs.js';
 import adminHierarchyRoutes from './routes/admin.hierarchy.js';
 import adminDropsRoutes from './routes/admin.drops.js';
 import { registerSeedRoutes } from './routes/admin.seed.js';
+import { adminDatabaseAnalysisRoutes } from './routes/admin.database-analysis.js';
 import { registerAdminBancaRoutes } from './routes/admin.bancas.js';
 import { registerScraperV2Routes } from './routes/admin.scraper-v2.js';
 import { registerGerarDropsTopicosRoutes } from './routes/admin.gerar-drops-topicos.js';
@@ -247,6 +248,7 @@ await app.register(adminHierarchyRoutes);
 await app.register(adminDropsRoutes);
 await app.register(adminAvailableBanksRoutes);
 await registerSeedRoutes(app); // Rota temporária para popular dados de teste
+await app.register(adminDatabaseAnalysisRoutes); // Rota para análise e limpeza de URLs inválidos
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

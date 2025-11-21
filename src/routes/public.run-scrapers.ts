@@ -1,4 +1,5 @@
 import { pool } from '../db/connection.js';
+import { extractAllEditalUrls } from '../services/edital-url-extractor.js';
 
 /**
  * ROTA PÚBLICA TEMPORÁRIA - REMOVER APÓS USO
@@ -106,6 +107,32 @@ export default async function publicRunScrapersRoutes(fastify, options) {
       });
     } catch (error) {
       console.error('[Public Run Scrapers] ❌ Erro:', error);
+      return reply.status(500).send({
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+
+  /**
+   * Rota para extrair URLs de editais dos concursos
+   */
+  fastify.post('/public/extract-editais', async (req, reply) => {
+    try {
+      console.log('[Public Extract Editais] Iniciando extração...');
+      
+      const result = await extractAllEditalUrls();
+      
+      return reply.send({
+        success: true,
+        message: `Extração concluída: ${result.extracted}/${result.total} editais encontrados`,
+        total: result.total,
+        extracted: result.extracted,
+        failed: result.failed,
+        results: result.results
+      });
+    } catch (error) {
+      console.error('[Public Extract Editais] ❌ Erro:', error);
       return reply.status(500).send({
         success: false,
         error: error instanceof Error ? error.message : 'Erro desconhecido'

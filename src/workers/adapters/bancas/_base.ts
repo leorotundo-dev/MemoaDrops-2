@@ -142,6 +142,11 @@ function extractItems($: cheerio.CheerioAPI, base: string, domainPattern: RegExp
     if (customFilters?.extractNameFromDOM) {
       // Buscar no article pai (para Vunesp e sites similares)
       const article = $(a).closest('article');
+      
+      // Se extractNameFromDOM está ativo, APENAS processar links dentro de <article>
+      if (article.length === 0) {
+        return; // Ignorar links fora de <article> (menu, footer, etc)
+      }
       if (article.length > 0) {
         // Tentar extrair título de elementos específicos da Vunesp
         const instituicao = article.find('.titulo').first().text().trim();

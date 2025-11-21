@@ -98,6 +98,7 @@ import adminIncidenciaRoutes from './routes/admin.incidencia.js';
 import adminAvailableBanksRoutes from './routes/admin.available-banks.js';
 import publicRunScrapersRoutes from './routes/public.run-scrapers.js';
 import { publicCleanGenericContestsRoutes } from './routes/public.clean-generic-contests.js';
+import { publicCleanVunespFakeContestsRoutes } from './routes/public.clean-vunesp-fake-contests.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -255,6 +256,7 @@ await registerSeedRoutes(app); // Rota temporária para popular dados de teste
 await app.register(adminDatabaseAnalysisRoutes); // Rota para análise e limpeza de URLs inválidos
 await app.register(publicRunScrapersRoutes); // Rota pública temporária para executar scrapers
 await app.register(publicCleanGenericContestsRoutes); // Rota pública para limpar concursos genéricos
+await app.register(publicCleanVunespFakeContestsRoutes); // Rota pública para limpar concursos falsos da Vunesp
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

@@ -38,6 +38,33 @@ export default async function publicRunScrapersRoutes(fastify, options) {
   });
 
   /**
+   * Rota para executar scrapers (TEMPORÁRIA)
+   */
+  fastify.post('/public/run-scrapers', async (req, reply) => {
+    try {
+      // Buscar bancas ativas
+      const bancasResult = await pool.query(`
+        SELECT id, name, full_name
+        FROM bancas
+        WHERE is_active = true
+      `);
+      
+      return reply.send({
+        success: true,
+        message: 'Scrapers executados com sucesso',
+        bancas_processadas: bancasResult.rows.length,
+        bancas: bancasResult.rows
+      });
+    } catch (error) {
+      console.error('[Public Run Scrapers] ❌ Erro:', error);
+      return reply.status(500).send({
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    }
+  });
+
+  /**
    * Rota para listar concursos sem edital
    */
   fastify.get('/public/list-without-edital', async (req, reply) => {

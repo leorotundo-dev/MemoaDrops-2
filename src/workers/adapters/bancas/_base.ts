@@ -99,7 +99,26 @@ function extractItems($: cheerio.CheerioAPI, base: string, domainPattern: RegExp
     /^anterior/i,
     /^menu/i,
     /^home$/i,
-    /^in[íi]cio$/i
+    /^in[íi]cio$/i,
+    /^novos concursos$/i,
+    /^concursos? (encerrados?|em andamento)$/i,
+    /^encerrados?$/i,
+    /^em andamento$/i,
+    /^teclas? de atalho$/i,
+    /^licita[çc][õo]es$/i,
+    /^transparência$/i,
+    /^portal do/i,
+    /^área do/i,
+    /^quem somos$/i,
+    /^funda[çc]ão/i,
+    /^pol[íi]tica/i,
+    /^institui[çc][õo]es atendidas$/i,
+    /^como contratar$/i,
+    /^certifica[çc][õo]es?$/i,
+    /^diferenciais$/i,
+    /^área de atua[çc]ão$/i,
+    /^lgpd$/i,
+    /^comiss[õo]es$/i
   ];
   
   $('a').each((_,a)=>{
@@ -143,13 +162,7 @@ function extractItems($: cheerio.CheerioAPI, base: string, domainPattern: RegExp
       // Buscar no article pai (para Vunesp e sites similares)
       const article = $(a).closest('article');
       
-      console.log(`[Extract DOM] Link: ${href}, Text: ${text}, Article found: ${article.length > 0}`);
-      
-      // Se extractNameFromDOM está ativo, APENAS processar links dentro de <article>
-      if (article.length === 0) {
-        console.log(`[Extract DOM] ❌ Ignorando link fora de <article>: ${text}`);
-        return; // Ignorar links fora de <article> (menu, footer, etc)
-      }
+      // Se encontrou article, extrair dados dele
       if (article.length > 0) {
         // Tentar extrair título de elementos específicos da Vunesp
         const instituicao = article.find('.titulo').first().text().trim();

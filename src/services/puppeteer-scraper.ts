@@ -64,7 +64,7 @@ export async function scrapeBancaContestsWithPuppeteer(
       'cesgranrio': 'a[href*="concurso"], .concurso a, a[href*="edital"]',
       'ibfc': 'a[href*="concurso"], .card a, a[href*="edital"], a[href*="ibfc.org.br"]',
       'aocp': 'a[href*="concurso"], .concurso-item a, a[href*="edital"]',
-      'vunesp': 'a[href*="concurso"], .card a, a[href*="vunesp.com.br"]',
+      'vunesp': 'a:contains("Saiba Mais"), a:contains("SAIBA MAIS"), a[href*="vunesp.com.br"]',
       'idecan': 'a[href*="concurso"], .card a, a[href*="edital"], a[href*="idecan.org.br"]',
     };
 
@@ -75,9 +75,71 @@ export async function scrapeBancaContestsWithPuppeteer(
       const links = Array.from(document.querySelectorAll(sel));
       const results: DiscoveredContest[] = [];
 
+      // Blacklist de textos genéricos
+      const blacklist = [
+        'Inscrições abertas', 'Ir para', 'Todos os', 'Passe o mouse',
+        'Concursos', 'Ver mais', 'Saiba mais', 'Clique aqui', 'Acessar',
+        'Voltar', 'Próximo', 'Anterior', 'Menu', 'Home', 'Início'
+      ];
+
+      const isGeneric = (text: string) => {
+        const lower = text.toLowerCase();
+        return blacklist.some(pattern => lower.includes(pattern.toLowerCase()));
+      };
+
       for (const link of links) {
         const href = (link as HTMLAnchorElement).href;
         const text = link.textContent?.trim() || '';
+
+        // Para VUNESP, extrair informações do card
+        if (bancaName.toLowerCase() === 'vunesp') {
+          // Pegar o card pai que contém todas as informações
+          const card = (link as HTMLElement).closest('article, div[class*="card"], div[class*="concurso"]');
+          if (!card) continue;
+
+          // Extrair código do concurso (ex: PITQ2501)
+          const codeElement = card.querySelector('[class*="codigo"], h4, strong');
+          const code = codeElement?.textContent?.trim();
+          
+          // Extrair instituição
+          const instituicaoElement = card.querySelector('h3, [class*="instituicao"], [class*="titulo"]');
+          const instituicao = instituicaoElement?.textContent?.trim() || '';
+          
+          // Extrair título do concurso
+          const tituloElement = card.querySelector('h4, [class*="titulo"], [class*="edital"]');
+          const titulo = tituloElement?.textContent?.trim() || '';
+          
+          // Montar nome completo
+          let contestName = '';
+          if (instituicao && titulo) {
+            contestName = `${instituicao} - ${titulo}`;
+          } else if (instituicao) {
+            contestName = instituicao;
+          } else if (titulo) {
+            contestName = titulo;
+          }
+
+          // Se não conseguiu extrair nome, pegar todo o texto do card
+          if (!contestName || contestName.length < 10) {
+            contestName = card.textContent?.trim().split('\n')[0] || '';
+          }
+
+          // Construir URL usando o código
+          let contestUrl = href;
+          if (code && code.match(/^[A-Z]{4}\d{4}$/)) {
+            contestUrl = `https://www.vunesp.com.br/${code}`;
+          }
+
+          // Validar
+          if (contestName && contestName.length > 10 && !isGeneric(contestName) && contestUrl.includes('vunesp.com.br')) {
+            results.push({
+              nome: contestName.substring(0, 255),
+              dou_url: contestUrl,
+              banca_id: bancaId,
+            });
+          }
+          continue;
+        }
 
         // Para CEBRASPE, filtrar apenas links "MAIS INFORMAÇÕES" e pegar nome do h3
         if (bancaName.toLowerCase() === 'cebraspe') {
@@ -112,7 +174,7 @@ export async function scrapeBancaContestsWithPuppeteer(
           continue;
         }
 
-        if (href && text && text.length > 3) {
+        if (href && text && text.length > 3 && !isGeneric(text)) {
           // Construir URL completa
           let fullUrl = href;
           if (!href.startsWith('http')) {

@@ -73,6 +73,31 @@ export async function scrapeBancaContests(bancaId: number): Promise<DiscoveredCo
     
     if (puppeteerBancas.includes(banca.name.toLowerCase())) {
       console.log(`[Contest Discovery] Usando Puppeteer para ${banca.name}`);
+      
+      // Para Vunesp, buscar em múltiplas URLs
+      if (banca.name.toLowerCase() === 'vunesp') {
+        const vunespUrls = [
+          'https://www.vunesp.com.br/busca/concurso/inscricoes%20abertas',
+          'https://www.vunesp.com.br/busca/concurso/proximo',
+          'https://www.vunesp.com.br/busca/concurso/em%20andamento',
+        ];
+        
+        const allContests: DiscoveredContest[] = [];
+        for (const url of vunespUrls) {
+          console.log(`[Contest Discovery] Buscando em: ${url}`);
+          const contests = await scrapeBancaContestsWithPuppeteer(bancaId, banca.name, url);
+          allContests.push(...contests);
+        }
+        
+        // Remover duplicatas baseado na URL
+        const uniqueContests = Array.from(
+          new Map(allContests.map(c => [c.dou_url, c])).values()
+        );
+        
+        console.log(`[Contest Discovery] Total de concursos únicos da Vunesp: ${uniqueContests.length}`);
+        return uniqueContests;
+      }
+      
       return await scrapeBancaContestsWithPuppeteer(bancaId, banca.name, contestUrl);
     }
 

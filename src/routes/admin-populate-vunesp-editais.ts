@@ -16,7 +16,7 @@ export async function adminPopulateVunespEditaisRoutes(app: FastifyInstance) {
       // Buscar concursos da Vunesp sem edital_url
       const { rows: contests } = await pool.query(`
         SELECT c.id, c.title, c.url, b.name as banca_name
-        FROM contests c
+        FROM concursos c
         JOIN bancas b ON c.banca_id = b.id
         WHERE LOWER(b.name) = 'vunesp'
         AND (c.edital_url IS NULL OR c.edital_url = '')
@@ -114,7 +114,7 @@ export async function adminPopulateVunespEditaisRoutes(app: FastifyInstance) {
             
             // Atualizar no banco
             await pool.query(
-              'UPDATE contests SET edital_url = $1 WHERE id = $2',
+              'UPDATE concursos SET edital_url = $1 WHERE id = $2',
               [editalPrincipal.url, contest.id]
             );
             

@@ -85,6 +85,7 @@ import { editalValidationRoutes } from './routes/admin-edital-validation.js';
 import { uploadPdfRoutes } from './routes/admin-upload-pdf.js';
 import { adminTestScraperRoutes } from './routes/admin-test-scraper.js';
 import { adminPopulateEditalUrlsRoutes } from './routes/admin-populate-edital-urls.js';
+import { adminPopulateVunespEditaisRoutes } from './routes/admin-populate-vunesp-editais.js';
 // import { adminScrapersRoutes } from './routes/admin-scrapers.js'; // REMOVIDO - substituído por admin-bancas-scrapers.ts
 import adminRunMigration048Routes from './routes/admin-run-migration.js';
 import { adminIbadeScraperRoutes } from './routes/admin-ibade-scraper.js';
@@ -234,6 +235,7 @@ await editalValidationRoutes(app);
 await uploadPdfRoutes(app);
 await adminTestScraperRoutes(app);
 await adminPopulateEditalUrlsRoutes(app);
+await adminPopulateVunespEditaisRoutes(app);
 // await adminScrapersRoutes(app); // REMOVIDO - substituído por admin-bancas-scrapers.ts
 await adminBancasScrapersRoutes(app); // Rotas unificadas do sistema workers
 await adminEditalWorkerRoutes(app); // Worker assíncrono de extração de editais

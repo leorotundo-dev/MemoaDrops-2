@@ -47,13 +47,62 @@ export default async function publicRunScrapersRoutes(fastify, options) {
         SELECT id, name, full_name
         FROM bancas
         WHERE is_active = true
+        ORDER BY name
       `);
+      
+      const bancas = bancasResult.rows;
+      const results = [];
+      
+      // Executar scraper de cada banca
+      for (const banca of bancas) {
+        try {
+          console.log(`[Public Scrapers] Executando scraper: ${banca.name}`);
+          
+          // Importar adapter dinamicamente
+          let adapter;
+          try {
+            adapter = await import(`../workers/adapters/bancas/${banca.name}.js`);
+          } catch (importError) {
+            console.log(`[Public Scrapers] Adapter não encontrado para: ${banca.name}`);
+            results.push({
+              banca: banca.name,
+              success: false,
+              error: 'Adapter não implementado'
+            });
+            continue;
+          }
+          
+          // Executar scraper
+          const result = await adapter.run();
+          
+          results.push({
+            banca: banca.name,
+            success: !result.error,
+            concursos_encontrados: result.found || 0,
+            error: result.error || null
+          });
+          
+          console.log(`[Public Scrapers] ${banca.name}: ${result.found || 0} concursos`);
+          
+        } catch (bancaError) {
+          console.error(`[Public Scrapers] Erro em ${banca.name}:`, bancaError);
+          results.push({
+            banca: banca.name,
+            success: false,
+            error: bancaError instanceof Error ? bancaError.message : 'Erro desconhecido'
+          });
+        }
+      }
+      
+      const totalEncontrados = results.reduce((sum, r) => sum + (r.concursos_encontrados || 0), 0);
+      const sucessos = results.filter(r => r.success).length;
       
       return reply.send({
         success: true,
-        message: 'Scrapers executados com sucesso',
-        bancas_processadas: bancasResult.rows.length,
-        bancas: bancasResult.rows
+        message: `Scrapers executados: ${sucessos}/${bancas.length} com sucesso`,
+        total_concursos_encontrados: totalEncontrados,
+        bancas_processadas: bancas.length,
+        results
       });
     } catch (error) {
       console.error('[Public Run Scrapers] ❌ Erro:', error);

@@ -83,10 +83,35 @@ async function tryPatterns(base: string, pageNum: number, renderMode: 'static'|'
 function extractItems($: cheerio.CheerioAPI, base: string, domainPattern: RegExp, customFilters?: CustomFilters): Array<{title:string; url:string}> {
   const items: Array<{title:string; url:string}> = [];
   
+  // Blacklist de textos genéricos que não são nomes de concursos
+  const GENERIC_TEXTS = [
+    /^inscri[çc][õo]es abertas?$/i,
+    /^ir para/i,
+    /^todos os/i,
+    /^passe o mouse/i,
+    /^concursos?$/i,
+    /^ver mais/i,
+    /^saiba mais/i,
+    /^clique aqui/i,
+    /^acessar/i,
+    /^voltar/i,
+    /^pr[óo]ximo/i,
+    /^anterior/i,
+    /^menu/i,
+    /^home$/i,
+    /^in[íi]cio$/i
+  ];
+  
   $('a').each((_,a)=>{
     const href = $(a).attr('href')||'';
     const text = $(a).text().trim();
     if (!href || !text) return;
+    
+    // Excluir textos genéricos
+    if (GENERIC_TEXTS.some(pattern => pattern.test(text))) return;
+    
+    // Excluir textos muito curtos (provavelmente botões)
+    if (text.length < 10) return;
     
     // Aplicar filtros customizados se fornecidos
     if (customFilters) {

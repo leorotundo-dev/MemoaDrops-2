@@ -94,44 +94,67 @@ export async function scrapeBancaContestsWithPuppeteer(
         // Para VUNESP, filtrar apenas links "Saiba Mais" e extrair informações do card
         if (bancaName.toLowerCase() === 'vunesp') {
           const linkText = text.toLowerCase();
-          if (!linkText.includes('saiba mais')) {
+          if (!linkText.includes('saiba mais') && !linkText.includes('saiba mais')) {
             continue;
           }
 
-          // Pegar o card pai que contém todas as informações
-          const card = (link as HTMLElement).closest('article, div, section');
-          if (!card) continue;
-
-          // Pegar todo o texto do card e limpar
-          const cardText = card.textContent?.trim() || '';
-          const lines = cardText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-          
-          // Tentar encontrar o nome do concurso (geralmente nas primeiras linhas)
-          let contestName = '';
-          for (const line of lines) {
-            // Pular linhas muito curtas ou genéricas
-            if (line.length < 10 || isGeneric(line)) continue;
-            // Pular linhas que são apenas números ou datas
-            if (/^[\d\s\/\-]+$/.test(line)) continue;
-            // Pular linhas que são apenas "SP", "RJ", etc
-            if (/^[A-Z]{2}$/.test(line)) continue;
-            
-            contestName = line;
-            break;
-          }
-
-          // Se não encontrou, usar as 3 primeiras linhas
-          if (!contestName && lines.length >= 3) {
-            contestName = lines.slice(0, 3).join(' - ');
-          }
-
-          // Validar e adicionar
-          if (contestName && contestName.length > 10 && !isGeneric(contestName) && href.includes('vunesp.com.br')) {
-            results.push({
-              nome: contestName.substring(0, 255),
-              dou_url: href,
-              banca_id: bancaId,
-            });
+          // Subir na hierarquia para encontrar o container do concurso
+          let container = (link as HTMLElement).parentElement;
+          let attempts = 0;
+          while (container && attempts < 10) {
+            const containerText = container.textContent || '';
+            // Procurar por padrão de código de concurso (ex: PITQ2501)
+            const codeMatch = containerText.match(/([A-Z]{4}\d{4})/);
+            if (codeMatch) {
+              const code = codeMatch[1];
+              
+              // Extrair texto do container
+              const allText = containerText.trim();
+              const lines = allText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+              
+              // Pegar linhas que parecem ser nome de instituição ou título
+              const nameLines: string[] = [];
+              for (const line of lines) {
+                // Pular código, estado, "CONCURSO", datas, etc
+                if (line === code) continue;
+                if (line === 'CONCURSO') continue;
+                if (line === 'SP' || line === 'RJ' || line.length === 2) continue;
+                if (isGeneric(line)) continue;
+                if (/^[\d\s\/\-:]+$/.test(line)) continue;
+                if (line.toLowerCase().includes('saiba mais')) continue;
+                if (line.toLowerCase().includes('vagas')) continue;
+                if (line.toLowerCase().includes('inscrições')) continue;
+                if (line.toLowerCase().includes('faixa salarial')) continue;
+                if (line.toLowerCase().includes('ensino')) continue;
+                
+                // Se a linha parece ser um nome válido
+                if (line.length >= 10) {
+                  nameLines.push(line);
+                  if (nameLines.length >= 2) break; // Pegar no máximo 2 linhas
+                }
+              }
+              
+              // Montar nome do concurso
+              let contestName = nameLines.join(' - ');
+              
+              // Se não conseguiu extrair nome, usar código como fallback
+              if (!contestName || contestName.length < 10) {
+                contestName = `Concurso ${code}`;
+              }
+              
+              // Construir URL
+              const contestUrl = `https://www.vunesp.com.br/${code}`;
+              
+              // Adicionar resultado
+              results.push({
+                nome: contestName.substring(0, 255),
+                dou_url: contestUrl,
+                banca_id: bancaId,
+              });
+              break;
+            }
+            container = container.parentElement;
+            attempts++;
           }
           continue;
         }

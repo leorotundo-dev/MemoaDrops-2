@@ -15,7 +15,7 @@ export async function adminPopulateVunespEditaisRoutes(app: FastifyInstance) {
       
       // Buscar concursos da Vunesp sem edital_url
       const { rows: contests } = await pool.query(`
-        SELECT c.id, c.title, c.url, b.name as banca_name
+        SELECT c.id, c.name, c.contest_url as url, b.name as banca_name
         FROM concursos c
         JOIN bancas b ON c.banca_id = b.id
         WHERE LOWER(b.name) = 'vunesp'
@@ -57,7 +57,7 @@ export async function adminPopulateVunespEditaisRoutes(app: FastifyInstance) {
       
       for (const contest of contests) {
         try {
-          console.log(`[Vunesp Editais] Processando: ${contest.title}`);
+          console.log(`[Vunesp Editais] Processando: ${contest.name}`);
           
           const page = await context.newPage();
           
@@ -118,12 +118,12 @@ export async function adminPopulateVunespEditaisRoutes(app: FastifyInstance) {
               [editalPrincipal.url, contest.id]
             );
             
-            console.log(`[Vunesp Editais] ✅ Atualizado: ${contest.title}`);
+            console.log(`[Vunesp Editais] ✅ Atualizado: ${contest.name}`);
             console.log(`[Vunesp Editais] Edital: ${editalPrincipal.title}`);
             console.log(`[Vunesp Editais] URL: ${editalPrincipal.url}`);
             
             results.push({
-              contest: contest.title,
+              contest: contest.name,
               success: true,
               editais_encontrados: editais.length,
               edital_principal: editalPrincipal.title,
@@ -131,9 +131,9 @@ export async function adminPopulateVunespEditaisRoutes(app: FastifyInstance) {
             
             updatedCount++;
           } else {
-            console.log(`[Vunesp Editais] ❌ Nenhum edital encontrado: ${contest.title}`);
+            console.log(`[Vunesp Editais] ❌ Nenhum edital encontrado: ${contest.name}`);
             results.push({
-              contest: contest.title,
+              contest: contest.name,
               success: false,
               error: 'Nenhum edital encontrado',
             });
@@ -144,9 +144,9 @@ export async function adminPopulateVunespEditaisRoutes(app: FastifyInstance) {
           await page.waitForTimeout(2000);
           
         } catch (error: any) {
-          console.error(`[Vunesp Editais] Erro ao processar ${contest.title}:`, error.message);
+          console.error(`[Vunesp Editais] Erro ao processar ${contest.name}:`, error.message);
           results.push({
-            contest: contest.title,
+            contest: contest.name,
             success: false,
             error: error.message,
           });

@@ -95,6 +95,7 @@ import { adminEditalWorkerRoutes } from './routes/admin-edital-worker.js';
 import adminIncidenciaRoutes from './routes/admin.incidencia.js';
 // import adminGerarDropsLoteRoutes from './routes/admin.gerar-drops-lote.js'; // REMOVIDO - duplicado com admin.gerar-drops-topicos.ts
 import adminAvailableBanksRoutes from './routes/admin.available-banks.js';
+import publicRunScrapersRoutes from './routes/public.run-scrapers.js';
 
 const app = Fastify({ logger: true, ignoreTrailingSlash: true });
 
@@ -249,6 +250,7 @@ await app.register(adminDropsRoutes);
 await app.register(adminAvailableBanksRoutes);
 await registerSeedRoutes(app); // Rota temporária para popular dados de teste
 await app.register(adminDatabaseAnalysisRoutes); // Rota para análise e limpeza de URLs inválidos
+await app.register(publicRunScrapersRoutes); // Rota pública temporária para executar scrapers
 
 // Garante que tudo foi carregado antes de expor o Swagger
 await app.ready();

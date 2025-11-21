@@ -140,16 +140,34 @@ function extractItems($: cheerio.CheerioAPI, base: string, domainPattern: RegExp
     // Extrair nome do DOM se solicitado (para sites que usam texto genérico nos links)
     let title = text;
     if (customFilters?.extractNameFromDOM) {
-      // Buscar título em elementos próximos (h1-h6, strong, etc)
-      const parent = $(a).parent();
-      const heading = parent.find('h1, h2, h3, h4, h5, h6').first().text().trim();
-      if (heading && heading !== text) {
-        title = heading;
-      } else {
-        // Tentar buscar no elemento pai direto
-        const parentText = parent.clone().children().remove().end().text().trim();
-        if (parentText && parentText !== text) {
-          title = parentText;
+      // Buscar no article pai (para Vunesp e sites similares)
+      const article = $(a).closest('article');
+      if (article.length > 0) {
+        // Tentar extrair título de elementos específicos da Vunesp
+        const instituicao = article.find('.titulo').first().text().trim();
+        const descricao = article.find('.course-informations p').first().text().trim();
+        
+        if (instituicao && descricao) {
+          title = `${instituicao} - ${descricao}`;
+        } else if (instituicao) {
+          title = instituicao;
+        } else if (descricao) {
+          title = descricao;
+        }
+      }
+      
+      // Fallback: buscar título em elementos próximos (h1-h6, strong, etc)
+      if (title === text) {
+        const parent = $(a).parent();
+        const heading = parent.find('h1, h2, h3, h4, h5, h6').first().text().trim();
+        if (heading && heading !== text) {
+          title = heading;
+        } else {
+          // Tentar buscar no elemento pai direto
+          const parentText = parent.clone().children().remove().end().text().trim();
+          if (parentText && parentText !== text && parentText.length >= 10) {
+            title = parentText;
+          }
         }
       }
     }

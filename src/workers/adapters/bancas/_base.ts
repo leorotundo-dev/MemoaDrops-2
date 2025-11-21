@@ -143,8 +143,11 @@ function extractItems($: cheerio.CheerioAPI, base: string, domainPattern: RegExp
       // Buscar no article pai (para Vunesp e sites similares)
       const article = $(a).closest('article');
       
+      console.log(`[Extract DOM] Link: ${href}, Text: ${text}, Article found: ${article.length > 0}`);
+      
       // Se extractNameFromDOM está ativo, APENAS processar links dentro de <article>
       if (article.length === 0) {
+        console.log(`[Extract DOM] ❌ Ignorando link fora de <article>: ${text}`);
         return; // Ignorar links fora de <article> (menu, footer, etc)
       }
       if (article.length > 0) {

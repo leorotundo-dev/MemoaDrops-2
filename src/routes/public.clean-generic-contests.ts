@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
-import { pool } from '../db/pool.js';
-import { logger } from '../logger.js';
+import { pool } from '../db/connection.js';
+import pino from 'pino';
+const logger = pino();
 
 export const publicCleanGenericContestsRoutes: FastifyPluginAsync = async (app) => {
   app.post('/public/clean-generic-contests', async (request, reply) => {
@@ -55,7 +56,7 @@ export const publicCleanGenericContestsRoutes: FastifyPluginAsync = async (app) 
       });
       
     } catch (error: unknown) {
-      logger.error('[CleanGenericContests] Erro ao limpar concursos:', error);
+      logger.error({ error }, '[CleanGenericContests] Erro ao limpar concursos');
       return reply.status(500).send({
         success: false,
         error: error instanceof Error ? error.message : String(error)

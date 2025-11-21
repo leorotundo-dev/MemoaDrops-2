@@ -146,7 +146,7 @@ export default async function publicRunScrapersRoutes(fastify, options) {
   fastify.get('/public/list-without-edital', async (req, reply) => {
     try {
       const result = await pool.query(`
-        SELECT c.id, c.nome, c.banca_id, b.nome as banca_nome, c.edital_url, c.created_at
+        SELECT c.id, c.name, c.banca_id, b.display_name as banca_nome, c.edital_url, c.created_at
         FROM concursos c
         JOIN bancas b ON c.banca_id = b.id
         WHERE b.is_active = true

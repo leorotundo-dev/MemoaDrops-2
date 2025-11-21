@@ -94,9 +94,11 @@ export async function scrapeBancaContestsWithPuppeteer(
         // Para VUNESP, filtrar apenas links "Saiba Mais" e extrair informações do card
         if (bancaName.toLowerCase() === 'vunesp') {
           const linkText = text.toLowerCase();
-          if (!linkText.includes('saiba mais') && !linkText.includes('saiba mais')) {
+          if (!linkText.includes('saiba mais')) {
             continue;
           }
+          
+          console.log(`[Vunesp Debug] Encontrado link "Saiba Mais": ${href}`);
 
           // Subir na hierarquia para encontrar o container do concurso
           let container = (link as HTMLElement).parentElement;
@@ -146,6 +148,7 @@ export async function scrapeBancaContestsWithPuppeteer(
               const contestUrl = `https://www.vunesp.com.br/${code}`;
               
               // Adicionar resultado
+              console.log(`[Vunesp Debug] Concurso encontrado: ${contestName} (${contestUrl})`);
               results.push({
                 nome: contestName.substring(0, 255),
                 dou_url: contestUrl,

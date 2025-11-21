@@ -64,7 +64,7 @@ export async function scrapeBancaContestsWithPuppeteer(
       'cesgranrio': 'a[href*="concurso"], .concurso a, a[href*="edital"]',
       'ibfc': 'a[href*="concurso"], .card a, a[href*="edital"], a[href*="ibfc.org.br"]',
       'aocp': 'a[href*="concurso"], .concurso-item a, a[href*="edital"]',
-      'vunesp': 'a:contains("Saiba Mais"), a:contains("SAIBA MAIS"), a[href*="vunesp.com.br"]',
+      'vunesp': 'a',
       'idecan': 'a[href*="concurso"], .card a, a[href*="edital"], a[href*="idecan.org.br"]',
     };
 
@@ -91,50 +91,45 @@ export async function scrapeBancaContestsWithPuppeteer(
         const href = (link as HTMLAnchorElement).href;
         const text = link.textContent?.trim() || '';
 
-        // Para VUNESP, extrair informações do card
+        // Para VUNESP, filtrar apenas links "Saiba Mais" e extrair informações do card
         if (bancaName.toLowerCase() === 'vunesp') {
+          const linkText = text.toLowerCase();
+          if (!linkText.includes('saiba mais')) {
+            continue;
+          }
+
           // Pegar o card pai que contém todas as informações
-          const card = (link as HTMLElement).closest('article, div[class*="card"], div[class*="concurso"]');
+          const card = (link as HTMLElement).closest('article, div, section');
           if (!card) continue;
 
-          // Extrair código do concurso (ex: PITQ2501)
-          const codeElement = card.querySelector('[class*="codigo"], h4, strong');
-          const code = codeElement?.textContent?.trim();
+          // Pegar todo o texto do card e limpar
+          const cardText = card.textContent?.trim() || '';
+          const lines = cardText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
           
-          // Extrair instituição
-          const instituicaoElement = card.querySelector('h3, [class*="instituicao"], [class*="titulo"]');
-          const instituicao = instituicaoElement?.textContent?.trim() || '';
-          
-          // Extrair título do concurso
-          const tituloElement = card.querySelector('h4, [class*="titulo"], [class*="edital"]');
-          const titulo = tituloElement?.textContent?.trim() || '';
-          
-          // Montar nome completo
+          // Tentar encontrar o nome do concurso (geralmente nas primeiras linhas)
           let contestName = '';
-          if (instituicao && titulo) {
-            contestName = `${instituicao} - ${titulo}`;
-          } else if (instituicao) {
-            contestName = instituicao;
-          } else if (titulo) {
-            contestName = titulo;
+          for (const line of lines) {
+            // Pular linhas muito curtas ou genéricas
+            if (line.length < 10 || isGeneric(line)) continue;
+            // Pular linhas que são apenas números ou datas
+            if (/^[\d\s\/\-]+$/.test(line)) continue;
+            // Pular linhas que são apenas "SP", "RJ", etc
+            if (/^[A-Z]{2}$/.test(line)) continue;
+            
+            contestName = line;
+            break;
           }
 
-          // Se não conseguiu extrair nome, pegar todo o texto do card
-          if (!contestName || contestName.length < 10) {
-            contestName = card.textContent?.trim().split('\n')[0] || '';
+          // Se não encontrou, usar as 3 primeiras linhas
+          if (!contestName && lines.length >= 3) {
+            contestName = lines.slice(0, 3).join(' - ');
           }
 
-          // Construir URL usando o código
-          let contestUrl = href;
-          if (code && code.match(/^[A-Z]{4}\d{4}$/)) {
-            contestUrl = `https://www.vunesp.com.br/${code}`;
-          }
-
-          // Validar
-          if (contestName && contestName.length > 10 && !isGeneric(contestName) && contestUrl.includes('vunesp.com.br')) {
+          // Validar e adicionar
+          if (contestName && contestName.length > 10 && !isGeneric(contestName) && href.includes('vunesp.com.br')) {
             results.push({
               nome: contestName.substring(0, 255),
-              dou_url: contestUrl,
+              dou_url: href,
               banca_id: bancaId,
             });
           }
